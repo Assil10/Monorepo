@@ -1,1 +1,0 @@
-"# korpor_next.js" 
