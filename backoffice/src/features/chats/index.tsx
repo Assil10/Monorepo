@@ -29,6 +29,22 @@ import { type ChatUser, type Convo } from './data/chat-types'
 // Fake Data
 import { conversations } from './data/convo.json'
 
+// CHANGED: AI Chat user with a starter message
+const aiUser: ChatUser = {
+  id: 'ai',
+  fullName: 'Chat with AI',
+  username: 'AI Assistant',
+  profile: '/ai.png', // Make sure ai.png is in your public folder
+  title: 'AI Chat',
+  messages: [
+    {
+      sender: 'AI Assistant',
+      message: 'Hello! How can I help you today?',
+      timestamp: '2025-03-07T12:00:00.000Z',
+    },
+  ],
+}
+
 export default function Chats() {
   const [search, setSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
@@ -38,29 +54,26 @@ export default function Chats() {
   const [createConversationDialogOpened, setCreateConversationDialog] =
     useState(false)
 
+  // CHANGED: Combine AI user with your conversation array
+  const users: ChatUser[] = [aiUser, ...conversations]
+
   // Filtered data based on the search query
-  const filteredChatList = conversations.filter(({ fullName }) =>
+  const filteredChatList = users.filter(({ fullName }) =>
     fullName.toLowerCase().includes(search.trim().toLowerCase())
   )
 
+  // Group messages by date
   const currentMessage = selectedUser?.messages.reduce(
     (acc: Record<string, Convo[]>, obj) => {
       const key = format(obj.timestamp, 'd MMM, yyyy')
-
-      // Create an array for the category if it doesn't exist
       if (!acc[key]) {
         acc[key] = []
       }
-
-      // Push the current object to the array
       acc[key].push(obj)
-
       return acc
     },
     {}
   )
-
-  const users = conversations.map(({ messages, ...user }) => user)
 
   return (
     <>
@@ -170,6 +183,7 @@ export default function Chats() {
                   >
                     <IconArrowLeft />
                   </Button>
+
                   <div className='flex items-center gap-2 lg:gap-4'>
                     <Avatar className='size-9 lg:size-11'>
                       <AvatarImage
@@ -178,11 +192,11 @@ export default function Chats() {
                       />
                       <AvatarFallback>{selectedUser.username}</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <span className='col-start-2 row-span-2 text-sm font-medium lg:text-base'>
+                    <div className='flex flex-col'>
+                      <span className='text-sm font-medium lg:text-base'>
                         {selectedUser.fullName}
                       </span>
-                      <span className='col-start-2 row-span-2 row-start-2 line-clamp-1 block max-w-32 text-ellipsis text-nowrap text-xs text-muted-foreground lg:max-w-none lg:text-sm'>
+                      <span className='mt-1 text-xs text-muted-foreground lg:text-sm'>
                         {selectedUser.title}
                       </span>
                     </div>
@@ -217,9 +231,9 @@ export default function Chats() {
 
               {/* Conversation */}
               <div className='flex flex-1 flex-col gap-2 rounded-md px-4 pb-4 pt-0'>
-                <div className='flex size-full flex-1'>
+                <div className='flex flex-1'>
                   <div className='chat-text-container relative -mr-4 flex flex-1 flex-col overflow-y-hidden'>
-                    <div className='chat-flex flex h-40 w-full flex-grow flex-col-reverse justify-start gap-4 overflow-y-auto py-2 pb-4 pr-4'>
+                    <div className='chat-flex flex w-full flex-grow flex-col-reverse justify-start gap-3 overflow-y-auto py-2 pb-4 pr-4'>
                       {currentMessage &&
                         Object.keys(currentMessage).map((key) => (
                           <Fragment key={key}>
@@ -227,7 +241,7 @@ export default function Chats() {
                               <div
                                 key={`${msg.sender}-${msg.timestamp}-${index}`}
                                 className={cn(
-                                  'chat-box max-w-72 break-words px-3 py-2 shadow-lg',
+                                  'chat-box m-1 max-w-72 break-words px-3 py-2 shadow-lg',
                                   msg.sender === 'You'
                                     ? 'self-end rounded-[16px_16px_0_16px] bg-primary/85 text-primary-foreground/75'
                                     : 'self-start rounded-[16px_16px_16px_0] bg-secondary'
@@ -335,6 +349,7 @@ export default function Chats() {
             </div>
           )}
         </section>
+
         <NewChat
           users={users}
           onOpenChange={setCreateConversationDialog}
