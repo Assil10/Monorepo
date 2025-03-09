@@ -31,8 +31,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 500M
+          cpus: '1.0'
+          memory: 1G
     networks:
       - app-network
     profiles: ["backend", "all"]
@@ -44,6 +44,8 @@ services:
       target: ${NODE_ENV:-development}
     ports:
       - "${BACKOFFICE_PORT}:5173"
+    environment:
+      - VITE_HOST=0.0.0.0
     depends_on:
       backend:
         condition: service_healthy
@@ -57,8 +59,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 600M
+          cpus: '1.0'
+          memory: 1.2G
     networks:
       - app-network
     profiles: ["frontend", "all"]
@@ -91,8 +93,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 1G
+          cpus: '1.5'
+          memory: 2G
     networks:
       - app-network
     profiles: ["mobile", "all"]
@@ -116,8 +118,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.7'
-          memory: 1G
+          cpus: '1.2'
+          memory: 1.5G
     networks:
       - app-network
     profiles: ["backend", "all"]
