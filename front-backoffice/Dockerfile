@@ -4,7 +4,23 @@ WORKDIR /app
 
 # Copy only package files first for better caching
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
+
+# Development stage - adding this to fix the docker-compose error
+FROM node:18-alpine AS development
+
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+# Expose Vite dev server port
+EXPOSE 5173
+
+# Health check for development server
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:5173/ || exit 1
+
+CMD ["npm", "run", "dev"]
 
 # Build stage
 FROM node:18-alpine AS build

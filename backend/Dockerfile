@@ -6,6 +6,22 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Development stage - adding this to fix the docker-compose error
+FROM node:18-alpine AS development
+
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+# Expose the API port
+EXPOSE 5000
+
+# Health check to verify app is running in development
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:5000/health || exit 1
+
+CMD ["npm", "run", "dev"]
+
 # Build stage
 FROM node:18-alpine AS build
 
@@ -35,10 +51,10 @@ COPY --from=build /app/src ./src
 USER nodejs
 
 # Expose the API port
-EXPOSE 3000
+EXPOSE 5000
 
 # Health check to verify app is running
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:5000/health || exit 1
 
 CMD ["npm", "run", "start"] 
