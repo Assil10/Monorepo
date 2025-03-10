@@ -27,9 +27,9 @@ Where:
 Examples:
 
 - `AJ-feature/user-authentication` (Ahmed Jaziri working on user authentication feature)
-- `TS-fix/login-button` (Taylor Smith fixing the login button)
-- `LM-docs/installation-guide` (Lisa Miller updating the installation guide)
-- `RK-hotfix/security-vulnerability` (Robert Kim creating a security hotfix)
+- `AK-fix/login-button` (Assil Khaldi fixing the login button)
+- `WM-docs/installation-guide` (Wael Mbarki updating the installation guide)
+- `ES-hotfix/security-vulnerability` (Eya slimani creating a security hotfix)
 
 ### Commit Message Convention
 
