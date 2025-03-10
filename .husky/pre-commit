@@ -1,0 +1,28 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check branch naming convention
+current_branch=$(git symbolic-ref --short HEAD)
+branch_pattern="^[A-Z]{2}-((feature|fix|hotfix|docs)\/[a-z0-9-]+)$"
+
+if ! echo "$current_branch" | grep -q -E "$branch_pattern"; then
+  if [ "$current_branch" != "main" ] && [ "$current_branch" != "develop" ]; then
+    echo "Error: Branch name does not follow the convention: XX-type/description"
+    echo "Where XX are your initials, type is feature, fix, hotfix, or docs"
+    echo "Example: AJ-feature/user-auth"
+    echo ""
+    echo "Your current branch: $current_branch"
+    echo ""
+    echo "You can rename your branch with: git branch -m <newname>"
+    exit 1
+  fi
+fi
+
+# Check for uncommitted changes in package-lock.json files
+if git diff --cached --name-only | grep -q "package-lock.json"; then
+  echo "Error: Changes to package-lock.json detected. Please run 'npm install' and commit again."
+  exit 1
+fi
+
+# Run lint-staged to format and lint files
+npx lint-staged 

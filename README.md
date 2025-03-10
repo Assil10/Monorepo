@@ -1,6 +1,7 @@
 # Monorepo with Docker Setup
 
 This repository contains three projects:
+
 1. `backend` - Node.js Express API
 2. `front-backoffice` - React admin panel built with Vite
 3. `front-mobile` - React Native mobile app built with Expo
@@ -83,6 +84,27 @@ docker compose down -v
 
 ## Development Workflow
 
+### Git Branching Conventions
+
+We use a standardized branch naming convention to keep our repository organized:
+
+```
+XX-type/short-description
+```
+
+Where:
+
+- `XX` are your initials (e.g., AJ for Ahmed Jaziri)
+- `type` is the type of change (feature, fix, hotfix, docs)
+- `short-description` is a brief description using hyphens for spaces
+
+Examples:
+
+- `AJ-feature/user-auth`
+- `TS-fix/login-button`
+
+For more details on our Git workflow, please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ### Development vs Production
 
 The Docker setup supports both development and production environments:
@@ -124,6 +146,22 @@ docker compose exec front-backoffice sh
 docker compose exec front-mobile sh
 ```
 
+### Testing
+
+Tests are not automatically run during commits. Before submitting a Pull Request, please run tests manually:
+
+```bash
+# Run tests for a specific project
+cd backend && npm test
+cd front-backoffice && npm test
+cd front-mobile && npm test
+
+# Or use the workspace command from the root to run specific project tests
+npm run test -w backend
+npm run test -w front-backoffice
+npm run test -w front-mobile
+```
+
 ## Security Considerations
 
 - All services run as non-root users for improved security
@@ -156,4 +194,4 @@ docker stats
 - **Container not starting**: Check the logs with `docker compose logs -f <service_name>`
 - **Volume permissions**: Run `chmod -R 777 ./data` to fix permission issues with mounted volumes
 - **Health check failures**: Check service-specific logs to find the cause
-- **Mongo connection issues**: Ensure MongoDB credentials are correctly set in the `.env` file 
+- **Mongo connection issues**: Ensure MongoDB credentials are correctly set in the `.env` file
