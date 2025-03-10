@@ -1,42 +1,28 @@
-import { useState, Fragment } from 'react';
-import { format } from 'date-fns';
-import {
-  IconArrowLeft,
-  IconDotsVertical,
-  IconEdit,
-  IconMessages,
-  IconPaperclip,
-  IconPhone,
-  IconPhotoPlus,
-  IconPlus,
-  IconSearch,
-  IconSend,
-  IconVideo,
-} from '@tabler/icons-react';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
+import { IconArrowLeft, IconEdit, IconMessages, IconSearch } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
 import { ProfileDropdown } from '@/components/profile-dropdown';
 import { Search } from '@/components/search';
 import { ThemeSwitch } from '@/components/theme-switch';
-import { NewChat } from './components/new-chat';
-import { type ChatUser, type Convo } from './data/chat-types';
-// Import your AI icon
-import aiIcon from '@/assets/ai.png';
+import { ChatUser } from './data/chat-types';
+import { NewChat } from '../chats/components/new-chat';
+import { ChatList } from '../chats/components/ChatList';
+import { ConversationPanel } from '../chats/components/ConversationPanel';
 
-// Fake Data
+// Import your AI icon (ensure the path is correct)
+import aiIcon from '@/assets/chatbotInternLogo.png';
+
+// Fake conversation data
 import { conversations } from './data/convo.json';
 
-// Define the AI user once here
+// Define the AI user
 const aiUser: ChatUser = {
   id: 'ai',
   fullName: 'Chat with AI',
   username: 'AI Assistant',
-  profile: aiIcon, // Ensure ai.png is in /assets or the correct location
+  profile: aiIcon,
   title: 'AI Chat',
   messages: [
     {
@@ -50,36 +36,15 @@ const aiUser: ChatUser = {
 export default function Chats() {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
-  const [mobileSelectedUser, setMobileSelectedUser] = useState<ChatUser | null>(
-    null
-  );
-  const [createConversationDialogOpened, setCreateConversationDialog] =
-    useState(false);
+  const [mobileSelectedUser, setMobileSelectedUser] = useState<ChatUser | null>(null);
+  const [createConversationDialogOpened, setCreateConversationDialog] = useState(false);
 
-  // Combine AI user with your conversation array
+  // Combine the AI user with your conversation data
   const users: ChatUser[] = [aiUser, ...conversations];
-
-  // Filtered data based on the search query
-  const filteredChatList = users.filter(({ fullName }) =>
-    fullName.toLowerCase().includes(search.trim().toLowerCase())
-  );
-
-  // Group messages by date
-  const currentMessage = selectedUser?.messages.reduce(
-    (acc: Record<string, Convo[]>, obj) => {
-      const dateKey = format(new Date(obj.timestamp), 'd MMM, yyyy');
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(obj);
-      return acc;
-    },
-    {}
-  );
 
   return (
     <>
-      {/* ===== Top Heading ===== */}
+      {/* Top Header */}
       <Header>
         <Search />
         <div className="ml-auto flex items-center space-x-4">
@@ -90,7 +55,7 @@ export default function Chats() {
 
       <Main fixed>
         <section className="flex h-full gap-6">
-          {/* Left Side */}
+          {/* Chat List Panel */}
           <div className="flex w-full flex-col gap-2 sm:w-56 lg:w-72 2xl:w-80">
             <div className="sticky top-0 z-10 -mx-4 bg-background px-4 pb-3 shadow-md sm:static sm:z-auto sm:mx-0 sm:p-0 sm:shadow-none">
               <div className="flex items-center justify-between py-2">
@@ -98,7 +63,6 @@ export default function Chats() {
                   <h1 className="text-2xl font-bold">Inbox</h1>
                   <IconMessages size={20} />
                 </div>
-
                 <Button
                   size="icon"
                   variant="ghost"
@@ -108,9 +72,8 @@ export default function Chats() {
                   <IconEdit size={24} className="stroke-muted-foreground" />
                 </Button>
               </div>
-
               <label className="flex h-12 w-full items-center space-x-0 rounded-md border border-input pl-2 focus-within:outline-none focus-within:ring-1 focus-within:ring-ring">
-                <IconSearch size={15} className="mr-2 stroke-slate-500" />
+                <IconSearch size={15} className="mr-2" />
                 <span className="sr-only">Search</span>
                 <input
                   type="text"
@@ -121,226 +84,33 @@ export default function Chats() {
                 />
               </label>
             </div>
-
-            <ScrollArea className="-mx-3 h-full p-3">
-              {filteredChatList.map((chatUsr) => {
-                const { id, profile, username, messages, fullName } = chatUsr;
-                const lastConvo = messages[0];
-                const lastMsg =
-                  lastConvo.sender === 'You'
-                    ? `You: ${lastConvo.message}`
-                    : lastConvo.message;
-
-                return (
-                  <Fragment key={id}>
-                    <button
-                      type="button"
-                      className={cn(
-                        `-mx-1 flex w-full rounded-md px-2 py-2 text-left text-sm hover:bg-secondary/75`,
-                        selectedUser?.id === id && 'sm:bg-muted'
-                      )}
-                      onClick={() => {
-                        setSelectedUser(chatUsr);
-                        setMobileSelectedUser(chatUsr);
-                      }}
-                    >
-                      <div className="flex gap-2">
-                        <Avatar>
-                          <AvatarImage src={profile} alt={username} />
-                          <AvatarFallback>{username}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <span className="col-start-2 row-span-2 font-medium">
-                            {fullName}
-                          </span>
-                          <span className="col-start-2 row-span-2 row-start-2 line-clamp-2 text-ellipsis text-muted-foreground">
-                            {lastMsg}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                    <Separator className="my-1" />
-                  </Fragment>
-                );
-              })}
-            </ScrollArea>
+            <ChatList
+              users={users}
+              selectedUser={selectedUser}
+              onSelectUser={(user) => {
+                setSelectedUser(user);
+                setMobileSelectedUser(user);
+              }}
+              search={search}
+            />
           </div>
 
-          {/* Right Side */}
+          {/* Conversation Panel */}
           {selectedUser ? (
-            <div
-              className={cn(
-                'absolute inset-0 left-full z-50 hidden w-full flex-1 flex-col rounded-md border bg-primary-foreground shadow-sm transition-all duration-200 sm:static sm:z-auto sm:flex',
-                mobileSelectedUser && 'left-0 flex'
-              )}
-            >
-              {/* Top Part */}
-              <div className="mb-1 flex flex-none justify-between rounded-t-md bg-secondary p-4 shadow-lg">
-                {/* Left */}
-                <div className="flex gap-3">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="-ml-2 h-full sm:hidden"
-                    onClick={() => setMobileSelectedUser(null)}
-                  >
-                    <IconArrowLeft />
-                  </Button>
-
-                  <div className="flex items-center gap-2 lg:gap-4">
-                    <Avatar className="size-9 lg:size-11">
-                      <AvatarImage
-                        src={selectedUser.profile}
-                        alt={selectedUser.username}
-                      />
-                      <AvatarFallback>{selectedUser.username}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium lg:text-base">
-                        {selectedUser.fullName}
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground lg:text-sm">
-                        {selectedUser.title}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right */}
-                <div className="-mr-1 flex items-center gap-1 lg:gap-2">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="hidden size-8 rounded-full sm:inline-flex lg:size-10"
-                  >
-                    <IconVideo size={22} className="stroke-muted-foreground" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="hidden size-8 rounded-full sm:inline-flex lg:size-10"
-                  >
-                    <IconPhone size={22} className="stroke-muted-foreground" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 rounded-md sm:h-8 sm:w-4 lg:h-10 lg:w-6"
-                  >
-                    <IconDotsVertical className="stroke-muted-foreground sm:size-5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Conversation */}
-              <div className="flex flex-1 flex-col gap-2 rounded-md px-4 pb-4 pt-0">
-                <div className="flex flex-1">
-                  <div className="chat-text-container relative -mr-4 flex flex-1 flex-col overflow-y-hidden">
-                    <div className="chat-flex flex w-full flex-grow flex-col-reverse justify-start gap-3 overflow-y-auto py-2 pb-4 pr-4">
-                      {currentMessage &&
-                        Object.keys(currentMessage).map((dateKey) => (
-                          <Fragment key={dateKey}>
-                            {currentMessage[dateKey].map((msg, index) => (
-                              <div
-                                key={`${msg.sender}-${msg.timestamp}-${index}`}
-                                className={cn(
-                                  'chat-box m-1 max-w-72 break-words px-3 py-2 shadow-lg',
-                                  msg.sender === 'You'
-                                    ? 'self-end rounded-[16px_16px_0_16px] bg-primary/85 text-primary-foreground/75'
-                                    : 'self-start rounded-[16px_16px_16px_0] bg-secondary'
-                                )}
-                              >
-                                {msg.message}{' '}
-                                <span
-                                  className={cn(
-                                    'mt-1 block text-xs font-light italic text-muted-foreground',
-                                    msg.sender === 'You' && 'text-right'
-                                  )}
-                                >
-                                  {format(new Date(msg.timestamp), 'h:mm a')}
-                                </span>
-                              </div>
-                            ))}
-                            <div className="text-center text-xs">{dateKey}</div>
-                          </Fragment>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-                <form className="flex w-full flex-none gap-2">
-                  <div className="flex flex-1 items-center gap-2 rounded-md border border-input px-2 py-1 focus-within:outline-none focus-within:ring-1 focus-within:ring-ring lg:gap-4">
-                    <div className="space-x-1">
-                      <Button
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        className="h-8 rounded-md"
-                      >
-                        <IconPlus
-                          size={20}
-                          className="stroke-muted-foreground"
-                        />
-                      </Button>
-                      <Button
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        className="hidden h-8 rounded-md lg:inline-flex"
-                      >
-                        <IconPhotoPlus
-                          size={20}
-                          className="stroke-muted-foreground"
-                        />
-                      </Button>
-                      <Button
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        className="hidden h-8 rounded-md lg:inline-flex"
-                      >
-                        <IconPaperclip
-                          size={20}
-                          className="stroke-muted-foreground"
-                        />
-                      </Button>
-                    </div>
-                    <label className="flex-1">
-                      <span className="sr-only">Chat Text Box</span>
-                      <input
-                        type="text"
-                        placeholder="Type your messages..."
-                        className="h-8 w-full bg-inherit focus-visible:outline-none"
-                      />
-                    </label>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hidden sm:inline-flex"
-                    >
-                      <IconSend size={20} />
-                    </Button>
-                  </div>
-                  <Button className="h-full sm:hidden">
-                    <IconSend size={18} /> Send
-                  </Button>
-                </form>
-              </div>
-            </div>
+            <ConversationPanel
+              selectedUser={selectedUser}
+              mobileSelectedUser={mobileSelectedUser}
+              onBack={() => setMobileSelectedUser(null)}
+            />
           ) : (
-            <div
-              className={cn(
-                'absolute inset-0 left-full z-50 hidden w-full flex-1 flex-col justify-center rounded-md border bg-primary-foreground shadow-sm transition-all duration-200 sm:static sm:z-auto sm:flex'
-              )}
-            >
+            <div className="absolute inset-0 left-full z-50 hidden w-full flex-1 flex-col justify-center rounded-md border bg-primary-foreground shadow-sm transition-all duration-200 sm:static sm:z-auto sm:flex">
               <div className="flex flex-col items-center space-y-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white">
                   <IconMessages className="h-8 w-8" />
                 </div>
                 <div className="space-y-2 text-center">
                   <h1 className="text-xl font-semibold">Your messages</h1>
-                  <p className="text-sm text-gray-400">
-                    Send a message to start a chat.
-                  </p>
+                  <p className="text-sm text-gray-400">Send a message to start a chat.</p>
                 </div>
                 <Button
                   className="bg-blue-500 px-6 text-white hover:bg-blue-600"

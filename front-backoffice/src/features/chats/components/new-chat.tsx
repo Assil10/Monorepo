@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { IconX, IconCheck } from '@tabler/icons-react';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -20,28 +20,29 @@ import {
 import { ChatUser } from '../data/chat-types';
 import AiChatItem from './AiChatItem';
 
-type User = Omit<ChatUser, 'messages'>;
-
-type Props = {
-  users: User[];
+type NewChatProps = {
+  users: ChatUser[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-export function NewChat({ users, onOpenChange, open }: Props) {
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+export function NewChat({ users, open, onOpenChange }: NewChatProps) {
+  const [selectedUsers, setSelectedUsers] = useState<ChatUser[]>([]);
 
-  const handleSelectUser = (user: User) => {
-    if (!selectedUsers.find((u) => u.id === user.id)) {
-      setSelectedUsers([...selectedUsers, user]);
-    } else {
-      handleRemoveUser(user.id);
-    }
-  };
+  // Memoize to avoid unnecessary recreations
+  const handleRemoveUser = useCallback((userId: string) => {
+    setSelectedUsers((prev) => prev.filter((user) => user.id !== userId));
+  }, []);
 
-  const handleRemoveUser = (userId: string) => {
-    setSelectedUsers(selectedUsers.filter((user) => user.id !== userId));
-  };
+  const handleSelectUser = useCallback((user: ChatUser) => {
+    setSelectedUsers((prev) => {
+      if (!prev.find((u) => u.id === user.id)) {
+        return [...prev, user];
+      } else {
+        return prev.filter((u) => u.id !== user.id);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -49,7 +50,8 @@ export function NewChat({ users, onOpenChange, open }: Props) {
     }
   }, [open]);
 
-  const onSubmit = () => {
+  // Renamed for clarity
+  const handleChatSubmit = () => {
     toast({
       title: 'You submitted the following values:',
       description: (
@@ -70,7 +72,7 @@ export function NewChat({ users, onOpenChange, open }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>New message</DialogTitle>
+          <DialogTitle>New Message</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           {/* Display selected users */}
@@ -82,11 +84,6 @@ export function NewChat({ users, onOpenChange, open }: Props) {
                 <button
                   className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onClick={() => handleRemoveUser(user.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleRemoveUser(user.id);
-                    }
-                  }}
                 >
                   <IconX className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                 </button>
@@ -147,7 +144,7 @@ export function NewChat({ users, onOpenChange, open }: Props) {
           </Command>
           <Button
             variant="default"
-            onClick={onSubmit}
+            onClick={handleChatSubmit}
             disabled={selectedUsers.length === 0}
           >
             Chat
