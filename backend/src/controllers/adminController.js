@@ -76,7 +76,9 @@ exports.createUser = async (req, res) => {
     if (!name || !surname || !email || !password || !birthdate || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ 
+      where: { email } 
+    });
     if (existingUser) return res.status(400).json({ message: "User already exists" });
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({

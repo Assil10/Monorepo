@@ -4,7 +4,10 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const moment = require('moment');
 const User = require('../models/User');
+const Role = require('../models/Role');
 const { generateOTP } = require('../middleware/otpMiddleware');
+const { blacklistToken } = require('../middleware/auth');
+const { recordFailedLoginAttempt, resetFailedLoginAttempts } = require('../middleware/loginLimiter');
 
 // Helper: Create and return a nodemailer transporter
 const createTransporter = () =>
@@ -46,481 +49,508 @@ const sendVerificationEmail = async (
   <style>
     body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
     .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
-    .header { background-color: #4c51bf; color: #ffffff; text-align: center; padding: 20px; }
-    .header h1 { margin: 0; font-size: 24px; }
+    .header { background-color: #663399; color: white; padding: 20px; text-align: center; }
     .content { padding: 30px; }
-    .content h2 { margin-top: 0; font-size: 20px; color: #333333; }
-    p { line-height: 1.6; color: #555555; margin-bottom: 15px; }
-    .info-table { width: 100%; margin: 25px 0; border-collapse: separate; border-spacing: 15px; }
-    .info-table td { background-color: #f9fafb; border-radius: 6px; padding: 12px; vertical-align: middle; }
-    .info-content { display: flex; align-items: center; gap: 10px; }
-    .info-content img { width: 22px; height: 22px; }
-    .code { font-size: 36px; font-weight: bold; letter-spacing: 2px; color: #4c51bf; text-align: center; margin: 25px 0; }
-    .footer { background-color: #f9fafb; padding: 20px; text-align: center; font-size: 14px; color: #888888; }
-    .button-container { text-align: center; margin: 20px 0; }
-    .button { display: inline-block; padding: 12px 25px; background-color: #4c51bf; color: rgb(178, 149, 149); text-decoration: none; border-radius: 4px; font-weight: bold; }
-    .button:hover { opacity: 0.9; }
-    .small { font-size: 12px; color: #aaaaaa; text-align: center; margin-top: 5px; }
+    .verification-code { font-size: 32px; font-weight: bold; letter-spacing: 5px; text-align: center; margin: 30px 0; color: #663399; }
+    .meta-row { display: flex; align-items: center; margin-bottom: 12px; }
+    .meta-icon { width: 20px; height: 20px; margin-right: 10px; }
+    .meta-text { font-size: 14px; color: #555; }
+    .divider { height: 1px; background-color: #eee; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #777; font-size: 12px; }
+    .cta-button { display: inline-block; background-color: #663399; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>Korpor - Mail Verification</h1>
+      <h2>Email Verification</h2>
     </div>
     <div class="content">
-      <h2>Hi ${userName},</h2>
-      <p>
-        You recently requested a mail verification (OTP) for your <strong>Korpor</strong> account.
-        Please use the code below to complete your verification:
-      </p>
-      <table class="info-table">
-        <tr>
-          <td>
-            <div class="info-content">
-              <img src="${locationIcon}" alt="Location" />
-              <span><strong>Location:</strong> ${userLocation}</span>
-            </div>
-          </td>
-          <td>
-            <div class="info-content">
-              <img src="${ipIcon}" alt="IP" />
-              <span><strong>IP Address:</strong> ${userIp}</span>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <div class="info-content">
-              <img src="${calendarIcon}" alt="Date" />
-              <span><strong>Date:</strong> ${date}</span>
-            </div>
-          </td>
-          <td>
-            <div class="info-content">
-              <img src="${timeIcon}" alt="Time" />
-              <span><strong>Time:</strong> ${time}</span>
-            </div>
-          </td>
-        </tr>
-      </table>
-      <p>Please enter this OTP to verify your account:</p>
-      <div class="code">${verificationCode}</div>
-      <p class="small"><em>Note: This code is valid for 15 minutes.</em></p>
-      <p>If you did not request this code, please secure your account immediately.</p>
-      <div class="button-container">
-        <a href="https://your-app.com/secure-account" class="button">Secure</a>
+      <p>Hello ${userName},</p>
+      <p>Thank you for signing up! Please use the verification code below to complete your registration:</p>
+      
+      <div class="verification-code">${verificationCode}</div>
+      
+      <p>This code will expire in 10 minutes for security reasons.</p>
+      
+      <div class="divider"></div>
+      
+      <p>Request details:</p>
+      
+      <div class="meta-row">
+        <img src="${locationIcon}" alt="Location" class="meta-icon" />
+        <div class="meta-text">Location: ${userLocation || 'Unknown'}</div>
       </div>
-      <p>Thank you for choosing <strong>Korpor</strong>.</p>
-      <p>
-        Make sure this email is from <strong>Korpor</strong>:
-        <a href="mailto:support@your-app.com">support@your-app.com</a>
-      </p>
+      
+      <div class="meta-row">
+        <img src="${ipIcon}" alt="IP Address" class="meta-icon" />
+        <div class="meta-text">IP Address: ${userIp || 'Unknown'}</div>
+      </div>
+      
+      <div class="meta-row">
+        <img src="${calendarIcon}" alt="Date" class="meta-icon" />
+        <div class="meta-text">Date: ${date || 'Unknown'}</div>
+      </div>
+      
+      <div class="meta-row">
+        <img src="${timeIcon}" alt="Time" class="meta-icon" />
+        <div class="meta-text">Time: ${time || 'Unknown'}</div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p>If you did not request this verification code, please ignore this email.</p>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Korpor Inc. All rights reserved.</p>
+      &copy; ${new Date().getFullYear()} Korpor. All rights reserved.
     </div>
   </div>
 </body>
 </html>
-    `;
+`;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    await transporter.sendMail({
+      from: `"Korpor Authentication" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "OTP Verification Code",
+      subject: "Verify Your Email Address",
       html: emailTemplate,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
     console.log(`Verification email sent to ${email}`);
+    return true;
   } catch (error) {
-    console.error("Error sending verification email:", error);
+    console.error("Email sending error:", error);
+    return false;
   }
 };
 
-// Stub: Send approval request to admins
-const sendApprovalRequestToAdmins = async (user) => {
-  // Implement your admin notification logic here.
-  console.log(`Admin approval requested for user: ${user.email}`);
+// Helper: Generate tokens (access and refresh)
+const generateTokens = (user) => {
+  // Include role name if available
+  const role = user.Role ? user.Role.name : null;
+  
+  // Generate access token - short lived (e.g., 1 hour)
+  const accessToken = jwt.sign(
+    { 
+      userId: user.id, 
+      email: user.email, 
+      role: role 
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' } // 1 hour
+  );
+  
+  // Generate refresh token - longer lived (e.g., 7 days)
+  const refreshToken = jwt.sign(
+    { 
+      userId: user.id, 
+      tokenType: 'refresh' 
+    },
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    { expiresIn: '7d' } // 7 days
+  );
+  
+  return { accessToken, refreshToken };
 };
 
-// ======================= Controller Endpoints =======================
+// ======================= CORE AUTH ENDPOINTS =======================
 
+/**
+ * User Registration
+ * Registers a new user and sends verification email
+ */
 exports.signUp = async (req, res) => {
   try {
     const { name, surname, email, password, birthdate } = req.body;
+    
+    // Validate inputs
     if (!name || !surname || !email || !password || !birthdate) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      where: { email } 
+    });
+    
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Hash password & generate verification code
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Generate a 4-digit OTP valid for 10 minutes
     const { otp: verificationCode, expiry: expiryTime } = generateOTP({ digits: 4, expiryMinutes: 10 });
 
     // Determine new account number
-    const lastUser = await User.findOne().sort({ accountNo: -1 });
+    const lastUser = await User.findOne({
+      order: [['accountNo', 'DESC']]
+    });
     const newAccountNo = lastUser && lastUser.accountNo ? lastUser.accountNo + 1 : 1000;
 
-    const newUser = new User({
+    // Create new user with Sequelize
+    const newUser = await User.create({
       accountNo: newAccountNo,
       name,
       surname,
       email,
       password: hashedPassword,
       birthdate,
-      approvalStatus: "pending",
+      isVerified: false,
       resetCode: verificationCode,
       resetCodeExpires: expiryTime,
+      approvalStatus: 'pending'
     });
 
-    await newUser.save();
-
-    // Send simple email verification message
-    const transporter = createTransporter();
-    const textTemplate = `Please use the following code to verify your email: ${verificationCode}`;
+    // Get client info for email
+    const date = moment().format('MMMM Do, YYYY');
+    const time = moment().format('h:mm A');
+    const userIp = req.ip || req.connection.remoteAddress;
+    const userLocation = 'Location data unavailable';
     
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Email Verification Code",
-      html: textTemplate,
-    };
-
-    await transporter.sendMail(mailOptions);
+    // Send verification email
+    await sendVerificationEmail(
+      email,
+      verificationCode,
+      name,
+      userLocation,
+      userIp,
+      date,
+      time
+    );
 
     res.status(201).json({
       message: "Sign-up request submitted successfully. Check your email for the verification code.",
-      accountNo: newUser.accountNo,
+      accountNo: newUser.accountNo
     });
   } catch (error) {
     console.error("SignUp Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-exports.verifysign = async (req, res) => {
+/**
+ * Email Verification
+ * Verifies a user's email with the provided code
+ */
+exports.verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
+    
     if (!email || !code) {
-      return res.status(400).json({ message: "Email and code are required" });
+      return res.status(400).json({ message: "Email and verification code are required" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user || user.resetCode !== code) {
-      return res.status(400).json({ message: "Invalid or expired verification code" });
+    const user = await User.findOne({ 
+      where: { email } 
+    });
+    
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
-    if (Date.now() > user.resetCodeExpires) {
+    
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+    
+    if (user.resetCode !== code) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+    
+    if (new Date() > new Date(user.resetCodeExpires)) {
       return res.status(400).json({ message: "Verification code has expired" });
     }
 
-    // Approve user
-    user.approvalStatus = "approved";
-    user.resetCode = null;
-    user.resetCodeExpires = null;
-    await user.save();
+    // Update user to verified status
+    await User.update({
+      isVerified: true,
+      resetCode: null,
+      resetCodeExpires: null,
+      approvalStatus: 'approved'  // Auto-approve if no admin approval needed
+    }, {
+      where: { id: user.id }
+    });
 
     res.json({ message: "Email verified successfully. Your account is now active!" });
   } catch (error) {
-    console.error("verifySign Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error("Verification Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+/**
+ * User Login
+ * Authenticates a user and returns tokens
+ */
 exports.signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
+    
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ 
+      where: { email },
+      include: [{ model: Role }]
+    });
+    
     if (!user) {
+      await recordFailedLoginAttempt(email);
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      await recordFailedLoginAttempt(email);
       return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email first" });
     }
 
     if (user.approvalStatus !== 'approved') {
       return res.status(403).json({ message: "Your account is not approved yet" });
     }
 
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET, // Use a strong secret key from .env
-      { expiresIn: "4h" } // Token valid for 4 hours
-    );
-
+    // Reset failed login attempts on successful login
+    await resetFailedLoginAttempts(email);
+    
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user);
+    
+    // Store refresh token in DB
+    const refreshExpiry = new Date();
+    refreshExpiry.setDate(refreshExpiry.getDate() + 7); // 7 days from now
+    
+    await User.update({
+      refreshToken: refreshToken,
+      refreshTokenExpires: refreshExpiry,
+      lastLogin: new Date()
+    }, {
+      where: { id: user.id }
+    });
+    
+    // Return success with tokens and basic user info
     res.json({
       message: "Sign-in successful",
-      token,
+      accessToken,
+      refreshToken,
       user: {
         accountNo: user.accountNo,
         name: user.name,
         surname: user.surname,
         email: user.email,
-        role: user.role,
-        profilePicture: user.profilePicture,
-      },
+        profilePicture: user.profilePicture || ""
+      }
     });
   } catch (error) {
     console.error("SignIn Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-exports.register = async (req, res) => {
+/**
+ * Token Refresh
+ * Issues a new access token using a valid refresh token
+ */
+exports.refreshToken = async (req, res) => {
   try {
-    const { name, surname, email, password, userIp, userLocation } = req.body;
-    if (!name || !surname || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({ message: "Refresh token is required" });
     }
-
-    let existingUser = await User.findOne({ email });
-    if (existingUser) {
-      // Re-register expired or unverified user
-      if (existingUser.expired || (existingUser.approvalStatus === 'unverified' && !existingUser.isVerified)) {
-        console.log("Re-registering expired/unverified user...");
-        existingUser.name = name;
-        existingUser.surname = surname;
-        existingUser.password = await bcrypt.hash(password, 10);
-        existingUser.isVerified = false;
-        existingUser.approvalStatus = "unverified";
-        existingUser.expired = false;
-        // Generate a 6-digit OTP valid for 5 minutes
-        const { otp: verificationCode, expiry: expirationTime } = generateOTP({ digits: 6, expiryMinutes: 5 });
-        existingUser.resetCode = verificationCode;
-        existingUser.resetCodeExpires = expirationTime;
-        await existingUser.save();
-
-        const finalUserIp = userIp || '0.0.0.0';
-        const finalUserLocation = userLocation || 'Unknown Location';
-        await sendVerificationEmail(
-          email,
-          verificationCode,
-          `${existingUser.name} ${existingUser.surname}`,
-          finalUserLocation,
-          finalUserIp,
-          moment().format("dddd, MMMM Do YYYY"),
-          moment().format("h:mm:ss A")
-        );
-
-        return res.status(200).json({
-          message: "User re-registered. Check your email for the verification code.",
-          accountNo: existingUser.accountNo,
-        });
-      }
-      if (existingUser.approvalStatus === 'approved' && !existingUser.expired) {
-        return res.status(400).json({ message: "User already exists" });
-      }
+    
+    // Verify the refresh token
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        refreshToken, 
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+      );
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid or expired refresh token" });
     }
-
-    console.log("Registering new user...");
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const { otp: verificationCode, expiry: expirationTime } = generateOTP({ digits: 6, expiryMinutes: 5 });
-    const lastUser = await User.findOne().sort({ accountNo: -1 });
-    const newAccountNo = lastUser && lastUser.accountNo ? lastUser.accountNo + 1 : 1000;
-
-    const newUser = new User({
-      accountNo: newAccountNo,
-      name,
-      surname,
-      email,
-      password: hashedPassword,
-      role: "user",
-      approvalStatus: "unverified",
-      isVerified: false,
-      resetCode: verificationCode,
-      resetCodeExpires: expirationTime,
+    
+    // Find the user with this refresh token
+    const user = await User.findOne({ 
+      where: { refreshToken },
+      include: [{ model: Role }]
     });
-
-    await newUser.save();
-    console.log("New user registered:", newUser);
-
-    const finalUserIp = userIp || '0.0.0.0';
-    const finalUserLocation = userLocation || 'Unknown Location';
-    const date = moment().format("dddd, MMMM Do YYYY");
-    const time = moment().format("h:mm:ss A");
-    const userName = `${name} ${surname}`;
-
-    await sendVerificationEmail(
-      email,
-      verificationCode,
-      userName,
-      finalUserLocation,
-      finalUserIp,
-      date,
-      time
-    );
-
-    res.status(201).json({
-      message: "Registration request submitted. Check your email for the verification code.",
-      accountNo: newUser.accountNo,
-    });
-  } catch (error) {
-    console.error("Registration Error:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
-exports.verifyregister = async (req, res) => {
-  try {
-    const { email, code } = req.body;
-    if (!email || !code) {
-      return res.status(400).json({ message: "Email and code are required" });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user || user.resetCode !== code) {
-      return res.status(400).json({ message: "Invalid or expired verification code" });
-    }
-    if (Date.now() > user.resetCodeExpires) {
-      return res.status(400).json({ message: "Verification code has expired" });
-    }
-
-    user.isVerified = true;
-    user.resetCode = null;
-    user.resetCodeExpires = null;
-    user.approvalStatus = "pending";
-    await user.save();
-
-    await sendApprovalRequestToAdmins(user);
-
-    res.json({ message: "Email verified successfully. Waiting for admin approval." });
-  } catch (error) {
-    console.error("verifyRegister Error:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
-    const user = await User.findOne({ email });
+    
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    
+    // Check if refresh token is expired in our database
+    if (new Date() > new Date(user.refreshTokenExpires)) {
+      return res.status(401).json({ message: "Refresh token has expired" });
     }
-    if (user.resetCode) {
-      return res.status(403).json({ message: "Email verification required. Check your email for the OTP." });
-    }
-    if (user.approvalStatus !== "approved") {
-      return res.status(403).json({ message: "Registration pending admin approval" });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '4h' }
-    );
-
-    res.json({
-      user: {
-        id: user._id,
-        accountNo: user.accountNo || "12345",
-        email: user.email,
-        role: user.role || "user",
-        exp: Math.floor(Date.now() / 1000) + 3600,
+    
+    // Generate new access token (but keep the same refresh token)
+    const accessToken = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email, 
+        role: user.Role ? user.Role.name : null
       },
-      token,
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    res.json({
+      message: "Token refreshed successfully",
+      accessToken
     });
   } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error("RefreshToken Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+/**
+ * Logout
+ * Invalidates the current access token and removes refresh token
+ */
+exports.logout = async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) {
+      return res.status(400).json({ message: "No token provided" });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Blacklist the current access token
+    await blacklistToken(token);
+    
+    // Get user ID from token
+    const decoded = jwt.decode(token);
+    const userId = decoded?.userId;
+    
+    if (userId) {
+      // Clear refresh token in database
+      await User.update({
+        refreshToken: null,
+        refreshTokenExpires: null
+      }, {
+        where: { id: userId }
+      });
+    }
+    
+    res.json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Validate Token
+ * Checks if the provided token is valid
+ */
+exports.validateToken = async (req, res) => {
+  // If we get here, the token is valid (thanks to authenticate middleware)
+  res.json({ 
+    valid: true,
+    user: req.user 
+  });
+};
+
+/**
+ * Forgot Password
+ * Sends a password reset code to the user's email
+ */
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Email is required" });
     
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    // Generate a 6-digit reset code valid for 10 minutes
-    const { otp: resetCode, expiry: expiryTime } = generateOTP({ digits: 6, expiryMinutes: 10 });
-    user.resetCode = resetCode;
-    user.resetCodeExpires = expiryTime;
-    await user.save();
-
-    const transporter = createTransporter();
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Password Reset Code',
-      text: `Your password reset code is: ${resetCode}`,
-    };
-
-    await transporter.sendMail(mailOptions);
-    res.json({ message: "Verification code sent to email" });
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    const user = await User.findOne({ 
+      where: { email } 
+    });
+    
+    if (!user) {
+      // Don't reveal that the user doesn't exist for security reasons
+      return res.status(200).json({ message: "If your email exists in our system, you will receive a password reset code." });
+    }
+    
+    // Generate reset code that expires in 1 hour
+    const { otp: resetCode, expiry } = generateOTP({ digits: 6, expiryMinutes: 60 });
+    
+    // Update user with reset code
+    await User.update({
+      resetCode: resetCode,
+      resetCodeExpires: expiry
+    }, {
+      where: { id: user.id }
+    });
+    
+    // Get client info for email
+    const date = moment().format('MMMM Do, YYYY');
+    const time = moment().format('h:mm A');
+    const userIp = req.ip || req.connection.remoteAddress;
+    const userLocation = 'Location data unavailable';
+    
+    // Send password reset email
+    await sendVerificationEmail(
+      email,
+      resetCode,
+      user.name,
+      userLocation,
+      userIp,
+      date,
+      time
+    );
+    
+    res.json({ message: "If your email exists in our system, you will receive a password reset code." });
   } catch (error) {
     console.error("ForgotPassword Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-exports.verifyCode = async (req, res) => {
-  try {
-    const { email, code } = req.body;
-    if (!email || !code) {
-      return res.status(400).json({ message: "Email and code are required" });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user || user.resetCode !== code) {
-      return res.status(400).json({ message: "Invalid or expired verification code" });
-    }
-    if (Date.now() > user.resetCodeExpires) {
-      return res.status(400).json({ message: "Verification code has expired" });
-    }
-
-    res.json({ message: "Code verified successfully" });
-  } catch (error) {
-    console.error("VerifyCode Error:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
+/**
+ * Reset Password
+ * Resets a user's password using the reset code
+ */
 exports.resetPassword = async (req, res) => {
   try {
     const { email, code, newPassword } = req.body;
+    
     if (!email || !code || !newPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
-    const user = await User.findOne({ email });
+    
+    const user = await User.findOne({ 
+      where: { email } 
+    });
+    
     if (!user || user.resetCode !== code) {
       return res.status(400).json({ message: "Invalid or expired verification code" });
     }
-    if (Date.now() > user.resetCodeExpires) {
+    
+    if (new Date() > new Date(user.resetCodeExpires)) {
       return res.status(400).json({ message: "Verification code has expired" });
     }
     
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.resetCode = null;
-    user.resetCodeExpires = null;
-    await user.save();
-
+    // Update password and clear reset code
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.update({
+      password: hashedPassword,
+      resetCode: null,
+      resetCodeExpires: null
+    }, {
+      where: { id: user.id }
+    });
+    
     res.json({ message: "Password reset successfully" });
   } catch (error) {
     console.error("ResetPassword Error:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

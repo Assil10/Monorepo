@@ -8,9 +8,11 @@ exports.initializeDefaultRoles = async () => {
       { name: "user", privileges: [] }
     ];
     for (const roleData of defaultRoles) {
-      const exists = await Role.findOne({ name: roleData.name });
+      const exists = await Role.findOne({ 
+        where: { name: roleData.name }
+      });
       if (!exists) {
-        await new Role(roleData).save();
+        await Role.create(roleData);
         console.log(`Role "${roleData.name}" created.`);
       }
     }
@@ -52,13 +54,22 @@ exports.createRole = async (req, res) => {
 
 exports.updateRole = async (req, res) => {
   try {
-    const { name, privileges } = req.body;
-    const role = await Role.findById(req.params.id);
-    if (!role) return res.status(404).json({ message: "Role not found" });
-    if (name) role.name = name;
-    if (privileges) role.privileges = privileges;
-    await role.save();
-    res.json({ message: "Role updated successfully", role });
+    await Role.update(req.body, {
+      where: { id: req.params.id }
+    });
+    
+    const role = await Role.findByPk(req.params.id);
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        error: 'Role not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: role
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -69,6 +80,18 @@ exports.deleteRole = async (req, res) => {
     const role = await Role.findByIdAndDelete(req.params.id);
     if (!role) return res.status(404).json({ message: "Role not found" });
     res.json({ message: "Role deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.addRole = async (req, res) => {
+  try {
+    const newRole = await Role.create(req.body);
+    res.status(201).json({
+      success: true,
+      data: newRole
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

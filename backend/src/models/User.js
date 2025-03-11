@@ -1,20 +1,109 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db.config');
 
-const userSchema = new mongoose.Schema({
-  accountNo: { type: Number, unique: true },
-  name: { type: String, required: true },
-  surname: { type: String, required: true },
-  email: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
-  birthdate: { type: Date },
-  resetCode: { type: String },
-  resetCodeExpires: { type: Date },
-  isVerified: { type: Boolean, default: false },
-  role: { type: String, enum: ['super admin', 'admin', 'user'], default: 'user' },
-  approvalStatus: { type: String, enum: ['unverified', 'pending', 'approved', 'rejected'], default: 'unverified' },
-  profilePicture: { type: String, default: '' },
-  cloudinaryPublicId: { type: String, default: '' },
-  expired: { type: Boolean, default: false } // 🔥 NEW FIELD
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  accountNo: {
+    type: DataTypes.INTEGER,
+    unique: true,
+    field: 'account_no'
+  },
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  surname: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  password: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  birthdate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  resetCode: {
+    type: DataTypes.STRING(10),
+    allowNull: true,
+    field: 'reset_code'
+  },
+  resetCodeExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'reset_code_expires'
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_verified'
+  },
+  roleId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'role_id'
+  },
+  approvalStatus: {
+    type: DataTypes.ENUM('unverified', 'pending', 'approved', 'rejected'),
+    defaultValue: 'unverified',
+    field: 'approval_status'
+  },
+  profilePicture: {
+    type: DataTypes.STRING(255),
+    defaultValue: '',
+    field: 'profile_picture'
+  },
+  cloudinaryPublicId: {
+    type: DataTypes.STRING(255),
+    defaultValue: '',
+    field: 'cloudinary_public_id'
+  },
+  expired: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  failedLoginAttempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    field: 'failed_login_attempts'
+  },
+  lockedUntil: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'locked_until'
+  },
+  lastLogin: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'last_login'
+  },
+  refreshToken: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    field: 'refresh_token'
+  },
+  refreshTokenExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'refresh_token_expires'
+  }
+}, {
+  tableName: 'users',
+  timestamps: true,
+  underscored: true // Use snake_case for columns
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;
