@@ -68,6 +68,9 @@ export function NewChat({ users, open, onOpenChange }: NewChatProps) {
   const ai = users.find((u) => u.id === 'ai');
   const otherUsers = users.filter((u) => u.id !== 'ai');
 
+  // Check if AI is selected
+  const isAiSelected = !!selectedUsers.find((u) => u.id === 'ai');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -79,7 +82,15 @@ export function NewChat({ users, open, onOpenChange }: NewChatProps) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-zinc-400">To:</span>
             {selectedUsers.map((user) => (
-              <Badge key={user.id} variant="default">
+              <Badge
+                key={user.id}
+                variant="default"
+                className={
+                  user.id === 'ai'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+                    : undefined
+                }
+              >
                 {user.fullName}
                 <button
                   className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -102,41 +113,69 @@ export function NewChat({ users, open, onOpenChange }: NewChatProps) {
                 {/* AI Chat option always at the top (if found) */}
                 {ai && (
                   <CommandItem
+                    value={`ai-${ai.fullName}-${ai.username}`}
                     onSelect={() => handleSelectUser(ai)}
-                    className="flex items-center justify-between gap-2"
+                    className="hover:bg-gray-100/50 cursor-pointer"
                   >
-                    <AiChatItem
-                      aiUser={ai}
-                      isSelected={!!selectedUsers.find((u) => u.id === ai.id)}
-                      onSelect={() => handleSelectUser(ai)}
-                    />
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 relative">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-sm transition-all duration-300"></div>
+                          <img
+                            src={ai.profile || '/placeholder.svg'}
+                            alt={ai.fullName}
+                            className="h-8 w-8 rounded-full relative z-10 border border-blue-300/50"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                            {ai.fullName}
+                          </span>
+                          <span className="text-xs text-zinc-400">
+                            {ai.username}
+                          </span>
+                        </div>
+                      </div>
+                      {isAiSelected && (
+                        <IconCheck className="h-4 w-4 text-blue-500" />
+                      )}
+                    </div>
                   </CommandItem>
+                )}
+                {/* Special divider after AI */}
+                {ai && (
+                  <div className="px-2 py-1.5">
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-blue-300/50 to-transparent"></div>
+                  </div>
                 )}
                 {/* Regular user list */}
                 {otherUsers.map((user) => (
                   <CommandItem
                     key={user.id}
+                    value={`${user.id}-${user.fullName}-${user.username}`}
                     onSelect={() => handleSelectUser(user)}
-                    className="flex items-center justify-between gap-2"
+                    className="hover:bg-gray-100/50 cursor-pointer"
                   >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={user.profile || '/placeholder.svg'}
-                        alt={user.fullName}
-                        className="h-8 w-8 rounded-full"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {user.fullName}
-                        </span>
-                        <span className="text-xs text-zinc-400">
-                          {user.username}
-                        </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={user.profile || '/placeholder.svg'}
+                          alt={user.fullName}
+                          className="h-8 w-8 rounded-full"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">
+                            {user.fullName}
+                          </span>
+                          <span className="text-xs text-zinc-400">
+                            {user.username}
+                          </span>
+                        </div>
                       </div>
+                      {selectedUsers.find((u) => u.id === user.id) && (
+                        <IconCheck className="h-4 w-4" />
+                      )}
                     </div>
-                    {selectedUsers.find((u) => u.id === user.id) && (
-                      <IconCheck className="h-4 w-4" />
-                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -146,6 +185,11 @@ export function NewChat({ users, open, onOpenChange }: NewChatProps) {
             variant="default"
             onClick={handleChatSubmit}
             disabled={selectedUsers.length === 0}
+            className={
+              isAiSelected
+                ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                : undefined
+            }
           >
             Chat
           </Button>
