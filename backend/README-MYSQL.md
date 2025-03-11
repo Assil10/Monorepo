@@ -92,7 +92,10 @@ npm start
 ## Authentication Flow
 
 1. **Registration**: User signs up and receives a verification code
+   - If user already exists but is unverified, a new verification code will be sent
+   - Expired verification codes are automatically refreshed during re-registration attempts
 2. **Email Verification**: User verifies email with the code
+   - Users can request a new verification code if the original one expires
 3. **Login**: User receives access and refresh tokens
 4. **Access Protected Resources**: Using the access token
 5. **Token Refresh**: Exchange refresh token for a new access token

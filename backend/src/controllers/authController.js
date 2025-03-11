@@ -1,18 +1,21 @@
-require('dotenv').config();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const moment = require('moment');
-const User = require('../models/User');
-const Role = require('../models/Role');
-const { generateOTP } = require('../middleware/otpMiddleware');
-const { blacklistToken } = require('../middleware/auth');
-const { recordFailedLoginAttempt, resetFailedLoginAttempts } = require('../middleware/loginLimiter');
+require("dotenv").config();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const moment = require("moment");
+const User = require("../models/User");
+const Role = require("../models/Role");
+const { generateOTP } = require("../middleware/otpMiddleware");
+const { blacklistToken } = require("../middleware/auth");
+const {
+  recordFailedLoginAttempt,
+  resetFailedLoginAttempts,
+} = require("../middleware/loginLimiter");
 
 // Helper: Create and return a nodemailer transporter
 const createTransporter = () =>
   nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -27,15 +30,17 @@ const sendVerificationEmail = async (
   userLocation,
   userIp,
   date,
-  time
+  time,
 ) => {
   try {
     const transporter = createTransporter();
 
     // Example icons (replace with your own if desired)
-    const locationIcon = "https://cdn-icons-png.flaticon.com/512/684/684908.png";
+    const locationIcon =
+      "https://cdn-icons-png.flaticon.com/512/684/684908.png";
     const ipIcon = "https://cdn-icons-png.flaticon.com/512/841/841364.png";
-    const calendarIcon = "https://cdn-icons-png.flaticon.com/512/747/747310.png";
+    const calendarIcon =
+      "https://cdn-icons-png.flaticon.com/512/747/747310.png";
     const timeIcon = "https://cdn-icons-png.flaticon.com/512/2911/2911643.png";
 
     const emailTemplate = `
@@ -79,22 +84,22 @@ const sendVerificationEmail = async (
       
       <div class="meta-row">
         <img src="${locationIcon}" alt="Location" class="meta-icon" />
-        <div class="meta-text">Location: ${userLocation || 'Unknown'}</div>
+        <div class="meta-text">Location: ${userLocation || "Unknown"}</div>
       </div>
       
       <div class="meta-row">
         <img src="${ipIcon}" alt="IP Address" class="meta-icon" />
-        <div class="meta-text">IP Address: ${userIp || 'Unknown'}</div>
+        <div class="meta-text">IP Address: ${userIp || "Unknown"}</div>
       </div>
       
       <div class="meta-row">
         <img src="${calendarIcon}" alt="Date" class="meta-icon" />
-        <div class="meta-text">Date: ${date || 'Unknown'}</div>
+        <div class="meta-text">Date: ${date || "Unknown"}</div>
       </div>
       
       <div class="meta-row">
         <img src="${timeIcon}" alt="Time" class="meta-icon" />
-        <div class="meta-text">Time: ${time || 'Unknown'}</div>
+        <div class="meta-text">Time: ${time || "Unknown"}</div>
       </div>
       
       <div class="divider"></div>
@@ -128,28 +133,28 @@ const sendVerificationEmail = async (
 const generateTokens = (user) => {
   // Include role name if available
   const role = user.Role ? user.Role.name : null;
-  
+
   // Generate access token - short lived (e.g., 1 hour)
   const accessToken = jwt.sign(
-    { 
-      userId: user.id, 
-      email: user.email, 
-      role: role 
+    {
+      userId: user.id,
+      email: user.email,
+      role: role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' } // 1 hour
+    { expiresIn: "1h" }, // 1 hour
   );
-  
+
   // Generate refresh token - longer lived (e.g., 7 days)
   const refreshToken = jwt.sign(
-    { 
-      userId: user.id, 
-      tokenType: 'refresh' 
+    {
+      userId: user.id,
+      tokenType: "refresh",
     },
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-    { expiresIn: '7d' } // 7 days
+    { expiresIn: "7d" }, // 7 days
   );
-  
+
   return { accessToken, refreshToken };
 };
 
@@ -157,35 +162,99 @@ const generateTokens = (user) => {
 
 /**
  * User Registration
- * Registers a new user and sends verification email
+ * Registers a new user and sends verification code
  */
 exports.signUp = async (req, res) => {
   try {
     const { name, surname, email, password, birthdate } = req.body;
-    
+
     // Validate inputs
     if (!name || !surname || !email || !password || !birthdate) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      where: { email } 
+    const existingUser = await User.findOne({
+      where: { email },
     });
-    
+
     if (existingUser) {
+      // Check if user exists but never verified their email
+      if (!existingUser.isVerified) {
+        // Check if verification code is expired
+        const isExpired =
+          !existingUser.resetCodeExpires ||
+          new Date() > new Date(existingUser.resetCodeExpires);
+
+        if (isExpired) {
+          // Generate new verification code for the existing user
+          const hashedPassword = await bcrypt.hash(password, 10);
+          const { otp: verificationCode, expiry: expiryTime } = generateOTP({
+            digits: 4,
+            expiryMinutes: 10,
+          });
+
+          // Update the existing user with new information
+          await User.update(
+            {
+              name,
+              surname,
+              password: hashedPassword,
+              resetCode: verificationCode,
+              resetCodeExpires: expiryTime,
+              approvalStatus: "pending",
+            },
+            {
+              where: { id: existingUser.id },
+            },
+          );
+
+          // Send verification email
+          const date = moment().format("MMMM Do, YYYY");
+          const time = moment().format("h:mm A");
+          const userIp = req.ip || req.connection.remoteAddress;
+          const userLocation = "Location data unavailable";
+
+          await sendVerificationEmail(
+            email,
+            verificationCode,
+            name,
+            userLocation,
+            userIp,
+            date,
+            time,
+          );
+
+          return res.status(200).json({
+            message: "We've sent a new verification code to your email.",
+            accountNo: existingUser.accountNo,
+          });
+        }
+
+        // If not expired, inform user verification is pending
+        return res.status(400).json({
+          message:
+            "This email is already registered but not verified. Please check your email for the verification code or wait for the current code to expire.",
+        });
+      }
+
+      // Standard case - user exists and is verified
       return res.status(400).json({ message: "User already exists" });
     }
 
     // Hash password & generate verification code
     const hashedPassword = await bcrypt.hash(password, 10);
-    const { otp: verificationCode, expiry: expiryTime } = generateOTP({ digits: 4, expiryMinutes: 10 });
+    const { otp: verificationCode, expiry: expiryTime } = generateOTP({
+      digits: 4,
+      expiryMinutes: 10,
+    });
 
     // Determine new account number
     const lastUser = await User.findOne({
-      order: [['accountNo', 'DESC']]
+      order: [["accountNo", "DESC"]],
     });
-    const newAccountNo = lastUser && lastUser.accountNo ? lastUser.accountNo + 1 : 1000;
+    const newAccountNo =
+      lastUser && lastUser.accountNo ? lastUser.accountNo + 1 : 1000;
 
     // Create new user with Sequelize
     const newUser = await User.create({
@@ -198,15 +267,15 @@ exports.signUp = async (req, res) => {
       isVerified: false,
       resetCode: verificationCode,
       resetCodeExpires: expiryTime,
-      approvalStatus: 'pending'
+      approvalStatus: "pending",
     });
 
     // Get client info for email
-    const date = moment().format('MMMM Do, YYYY');
-    const time = moment().format('h:mm A');
+    const date = moment().format("MMMM Do, YYYY");
+    const time = moment().format("h:mm A");
     const userIp = req.ip || req.connection.remoteAddress;
-    const userLocation = 'Location data unavailable';
-    
+    const userLocation = "Location data unavailable";
+
     // Send verification email
     await sendVerificationEmail(
       email,
@@ -215,12 +284,13 @@ exports.signUp = async (req, res) => {
       userLocation,
       userIp,
       date,
-      time
+      time,
     );
 
     res.status(201).json({
-      message: "Sign-up request submitted successfully. Check your email for the verification code.",
-      accountNo: newUser.accountNo
+      message:
+        "Sign-up request submitted successfully. Check your email for the verification code.",
+      accountNo: newUser.accountNo,
     });
   } catch (error) {
     console.error("SignUp Error:", error);
@@ -235,42 +305,49 @@ exports.signUp = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
-    
+
     if (!email || !code) {
-      return res.status(400).json({ message: "Email and verification code are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and verification code are required" });
     }
 
-    const user = await User.findOne({ 
-      where: { email } 
+    const user = await User.findOne({
+      where: { email },
     });
-    
+
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-    
+
     if (user.isVerified) {
       return res.status(400).json({ message: "Email already verified" });
     }
-    
+
     if (user.resetCode !== code) {
       return res.status(400).json({ message: "Invalid verification code" });
     }
-    
+
     if (new Date() > new Date(user.resetCodeExpires)) {
       return res.status(400).json({ message: "Verification code has expired" });
     }
 
     // Update user to verified status
-    await User.update({
-      isVerified: true,
-      resetCode: null,
-      resetCodeExpires: null,
-      approvalStatus: 'approved'  // Auto-approve if no admin approval needed
-    }, {
-      where: { id: user.id }
-    });
+    await User.update(
+      {
+        isVerified: true,
+        resetCode: null,
+        resetCodeExpires: null,
+        approvalStatus: "approved", // Auto-approve if no admin approval needed
+      },
+      {
+        where: { id: user.id },
+      },
+    );
 
-    res.json({ message: "Email verified successfully. Your account is now active!" });
+    res.json({
+      message: "Email verified successfully. Your account is now active!",
+    });
   } catch (error) {
     console.error("Verification Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -284,16 +361,18 @@ exports.verifyEmail = async (req, res) => {
 exports.signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       where: { email },
-      include: [{ model: Role }]
+      include: [{ model: Role }],
     });
-    
+
     if (!user) {
       await recordFailedLoginAttempt(email);
       return res.status(400).json({ message: "Invalid email or password" });
@@ -306,31 +385,38 @@ exports.signIn = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({ message: "Please verify your email first" });
+      return res
+        .status(403)
+        .json({ message: "Please verify your email first" });
     }
 
-    if (user.approvalStatus !== 'approved') {
-      return res.status(403).json({ message: "Your account is not approved yet" });
+    if (user.approvalStatus !== "approved") {
+      return res
+        .status(403)
+        .json({ message: "Your account is not approved yet" });
     }
 
     // Reset failed login attempts on successful login
     await resetFailedLoginAttempts(email);
-    
+
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user);
-    
+
     // Store refresh token in DB
     const refreshExpiry = new Date();
     refreshExpiry.setDate(refreshExpiry.getDate() + 7); // 7 days from now
-    
-    await User.update({
-      refreshToken: refreshToken,
-      refreshTokenExpires: refreshExpiry,
-      lastLogin: new Date()
-    }, {
-      where: { id: user.id }
-    });
-    
+
+    await User.update(
+      {
+        refreshToken: refreshToken,
+        refreshTokenExpires: refreshExpiry,
+        lastLogin: new Date(),
+      },
+      {
+        where: { id: user.id },
+      },
+    );
+
     // Return success with tokens and basic user info
     res.json({
       message: "Sign-in successful",
@@ -341,8 +427,8 @@ exports.signIn = async (req, res) => {
         name: user.name,
         surname: user.surname,
         email: user.email,
-        profilePicture: user.profilePicture || ""
-      }
+        profilePicture: user.profilePicture || "",
+      },
     });
   } catch (error) {
     console.error("SignIn Error:", error);
@@ -357,51 +443,53 @@ exports.signIn = async (req, res) => {
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required" });
     }
-    
+
     // Verify the refresh token
     let decoded;
     try {
       decoded = jwt.verify(
-        refreshToken, 
-        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
       );
     } catch (error) {
-      return res.status(401).json({ message: "Invalid or expired refresh token" });
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired refresh token" });
     }
-    
+
     // Find the user with this refresh token
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       where: { refreshToken },
-      include: [{ model: Role }]
+      include: [{ model: Role }],
     });
-    
+
     if (!user) {
       return res.status(401).json({ message: "Invalid refresh token" });
     }
-    
+
     // Check if refresh token is expired in our database
     if (new Date() > new Date(user.refreshTokenExpires)) {
       return res.status(401).json({ message: "Refresh token has expired" });
     }
-    
+
     // Generate new access token (but keep the same refresh token)
     const accessToken = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.Role ? user.Role.name : null
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.Role ? user.Role.name : null,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: "1h" },
     );
-    
+
     res.json({
       message: "Token refreshed successfully",
-      accessToken
+      accessToken,
     });
   } catch (error) {
     console.error("RefreshToken Error:", error);
@@ -415,30 +503,33 @@ exports.refreshToken = async (req, res) => {
  */
 exports.logout = async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
+    const authHeader = req.header("Authorization");
     if (!authHeader) {
       return res.status(400).json({ message: "No token provided" });
     }
-    
-    const token = authHeader.replace('Bearer ', '');
-    
+
+    const token = authHeader.replace("Bearer ", "");
+
     // Blacklist the current access token
     await blacklistToken(token);
-    
+
     // Get user ID from token
     const decoded = jwt.decode(token);
     const userId = decoded?.userId;
-    
+
     if (userId) {
       // Clear refresh token in database
-      await User.update({
-        refreshToken: null,
-        refreshTokenExpires: null
-      }, {
-        where: { id: userId }
-      });
+      await User.update(
+        {
+          refreshToken: null,
+          refreshTokenExpires: null,
+        },
+        {
+          where: { id: userId },
+        },
+      );
     }
-    
+
     res.json({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout Error:", error);
@@ -452,9 +543,9 @@ exports.logout = async (req, res) => {
  */
 exports.validateToken = async (req, res) => {
   // If we get here, the token is valid (thanks to authenticate middleware)
-  res.json({ 
+  res.json({
     valid: true,
-    user: req.user 
+    user: req.user,
   });
 };
 
@@ -465,37 +556,48 @@ exports.validateToken = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
     }
-    
-    const user = await User.findOne({ 
-      where: { email } 
+
+    const user = await User.findOne({
+      where: { email },
     });
-    
+
     if (!user) {
       // Don't reveal that the user doesn't exist for security reasons
-      return res.status(200).json({ message: "If your email exists in our system, you will receive a password reset code." });
+      return res
+        .status(200)
+        .json({
+          message:
+            "If your email exists in our system, you will receive a password reset code.",
+        });
     }
-    
+
     // Generate reset code that expires in 1 hour
-    const { otp: resetCode, expiry } = generateOTP({ digits: 6, expiryMinutes: 60 });
-    
-    // Update user with reset code
-    await User.update({
-      resetCode: resetCode,
-      resetCodeExpires: expiry
-    }, {
-      where: { id: user.id }
+    const { otp: resetCode, expiry } = generateOTP({
+      digits: 6,
+      expiryMinutes: 60,
     });
-    
+
+    // Update user with reset code
+    await User.update(
+      {
+        resetCode: resetCode,
+        resetCodeExpires: expiry,
+      },
+      {
+        where: { id: user.id },
+      },
+    );
+
     // Get client info for email
-    const date = moment().format('MMMM Do, YYYY');
-    const time = moment().format('h:mm A');
+    const date = moment().format("MMMM Do, YYYY");
+    const time = moment().format("h:mm A");
     const userIp = req.ip || req.connection.remoteAddress;
-    const userLocation = 'Location data unavailable';
-    
+    const userLocation = "Location data unavailable";
+
     // Send password reset email
     await sendVerificationEmail(
       email,
@@ -504,10 +606,13 @@ exports.forgotPassword = async (req, res) => {
       userLocation,
       userIp,
       date,
-      time
+      time,
     );
-    
-    res.json({ message: "If your email exists in our system, you will receive a password reset code." });
+
+    res.json({
+      message:
+        "If your email exists in our system, you will receive a password reset code.",
+    });
   } catch (error) {
     console.error("ForgotPassword Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -521,36 +626,117 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { email, code, newPassword } = req.body;
-    
+
     if (!email || !code || !newPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    
-    const user = await User.findOne({ 
-      where: { email } 
+
+    const user = await User.findOne({
+      where: { email },
     });
-    
+
     if (!user || user.resetCode !== code) {
-      return res.status(400).json({ message: "Invalid or expired verification code" });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired verification code" });
     }
-    
+
     if (new Date() > new Date(user.resetCodeExpires)) {
       return res.status(400).json({ message: "Verification code has expired" });
     }
-    
+
     // Update password and clear reset code
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.update({
-      password: hashedPassword,
-      resetCode: null,
-      resetCodeExpires: null
-    }, {
-      where: { id: user.id }
-    });
-    
+    await User.update(
+      {
+        password: hashedPassword,
+        resetCode: null,
+        resetCodeExpires: null,
+      },
+      {
+        where: { id: user.id },
+      },
+    );
+
     res.json({ message: "Password reset successfully" });
   } catch (error) {
     console.error("ResetPassword Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Resend Verification Code
+ * Issues a new verification code for unverified users
+ */
+exports.resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Find the user
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      // For security reasons, don't reveal if the email exists
+      return res.status(200).json({
+        message:
+          "If your email is registered, a new verification code has been sent.",
+      });
+    }
+
+    // Check if the user is already verified
+    if (user.isVerified) {
+      return res.status(400).json({
+        message: "This account is already verified. Please sign in instead.",
+      });
+    }
+
+    // Generate new verification code
+    const { otp: verificationCode, expiry: expiryTime } = generateOTP({
+      digits: 4,
+      expiryMinutes: 10,
+    });
+
+    // Update the user with new verification code
+    await User.update(
+      {
+        resetCode: verificationCode,
+        resetCodeExpires: expiryTime,
+      },
+      {
+        where: { id: user.id },
+      },
+    );
+
+    // Send verification email
+    const date = moment().format("MMMM Do, YYYY");
+    const time = moment().format("h:mm A");
+    const userIp = req.ip || req.connection.remoteAddress;
+    const userLocation = "Location data unavailable";
+
+    await sendVerificationEmail(
+      email,
+      verificationCode,
+      user.name,
+      userLocation,
+      userIp,
+      date,
+      time,
+    );
+
+    // Return success message (don't confirm if email exists)
+    res.status(200).json({
+      message:
+        "If your email is registered, a new verification code has been sent.",
+    });
+  } catch (error) {
+    console.error("ResendVerificationCode Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -1,8 +1,11 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { authenticate } = require('../middleware/auth');
-const { authLimiter, handleFailedLogin } = require('../middleware/loginLimiter');
+const authController = require("../controllers/authController");
+const { authenticate } = require("../middleware/auth");
+const {
+  authLimiter,
+  handleFailedLogin,
+} = require("../middleware/loginLimiter");
 
 // Apply rate limiting to all authentication routes
 router.use(authLimiter);
@@ -56,14 +59,14 @@ router.use(authLimiter);
  *         email: john.doe@example.com
  *         password: SecurePassword123!
  *         birthdate: 1990-01-01
- *   
+ *
  *   securitySchemes:
  *     bearerAuth:
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
  *       description: Enter JWT token in the format 'Bearer {token}'
- * 
+ *
  * tags:
  *   - name: Authentication
  *     description: User authentication operations
@@ -154,7 +157,7 @@ router.use(authLimiter);
  *                 error:
  *                   type: string
  */
-router.post('/sign-up', authController.signUp);
+router.post("/sign-up", authController.signUp);
 
 /**
  * @swagger
@@ -204,7 +207,7 @@ router.post('/sign-up', authController.signUp);
  *       500:
  *         description: Server error
  */
-router.post('/verify-email', authController.verifyEmail);
+router.post("/verify-email", authController.verifyEmail);
 
 /**
  * @swagger
@@ -299,7 +302,7 @@ router.post('/verify-email', authController.verifyEmail);
  *       500:
  *         description: Server error
  */
-router.post('/sign-in', handleFailedLogin, authController.signIn);
+router.post("/sign-in", handleFailedLogin, authController.signIn);
 
 /**
  * @swagger
@@ -349,7 +352,7 @@ router.post('/sign-in', handleFailedLogin, authController.signIn);
  *       500:
  *         description: Server error
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post("/refresh-token", authController.refreshToken);
 
 /**
  * @swagger
@@ -378,7 +381,7 @@ router.post('/refresh-token', authController.refreshToken);
  *       500:
  *         description: Server error
  */
-router.post('/logout', authController.logout);
+router.post("/logout", authController.logout);
 
 /**
  * @swagger
@@ -425,7 +428,7 @@ router.post('/logout', authController.logout);
  *       500:
  *         description: Server error
  */
-router.get('/validate-token', authenticate, authController.validateToken);
+router.get("/validate-token", authenticate, authController.validateToken);
 
 /**
  * @swagger
@@ -463,7 +466,7 @@ router.get('/validate-token', authenticate, authController.validateToken);
  *       500:
  *         description: Server error
  */
-router.post('/forgot-password', authController.forgotPassword);
+router.post("/forgot-password", authController.forgotPassword);
 
 /**
  * @swagger
@@ -518,6 +521,52 @@ router.post('/forgot-password', authController.forgotPassword);
  *       500:
  *         description: Server error
  */
-router.post('/reset-password', authController.resetPassword);
+router.post("/reset-password", authController.resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Resend verification code
+ *     description: Request a new verification code for an unverified account. This is useful if the original code expired or was lost.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john.doe@example.com
+ *     responses:
+ *       200:
+ *         description: Verification code resent (for security, this response is the same whether the email exists or not)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: If your email is registered, a new verification code has been sent.
+ *       400:
+ *         description: Account already verified or email is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: This account is already verified. Please sign in instead.
+ *       500:
+ *         description: Server error
+ */
+router.post("/resend-verification", authController.resendVerificationCode);
 
 module.exports = router;

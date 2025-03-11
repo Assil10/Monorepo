@@ -179,10 +179,16 @@ npm start
 - **POST /api/auth/sign-up**: Register a new user.
 
   - Body: `{ name, surname, email, password, birthdate }`
+  - Enhanced to handle re-registration attempts with unverified emails
 
 - **POST /api/auth/verify-email**: Verify user's email with code.
 
   - Body: `{ email, code }`
+
+- **POST /api/auth/resend-verification**: Request a new verification code for unverified accounts.
+
+  - Body: `{ email }`
+  - Useful if the original code expired or was lost
 
 - **POST /api/auth/sign-in**: Login for approved users.
 
