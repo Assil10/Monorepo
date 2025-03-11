@@ -32,6 +32,8 @@ I've been creating dashboard UIs at work and for my personal projects. I always 
 
 **Icons:** [Tabler Icons](https://tabler.io/icons)
 
+**Component Documentation:** [Storybook](https://storybook.js.org/)
+
 ## Run Locally
 
 Clone the project
@@ -57,6 +59,20 @@ Start the server
 ```bash
   pnpm run dev
 ```
+
+## Storybook
+
+This project uses Storybook to document and showcase UI components in isolation.
+
+To run Storybook:
+
+```bash
+pnpm run storybook
+```
+
+This will start Storybook on port 6006. Open [http://localhost:6006](http://localhost:6006) to view it in your browser.
+
+See [STORYBOOK.md](./STORYBOOK.md) for more information about how Storybook is implemented in this project.
 
 ## Author
 
