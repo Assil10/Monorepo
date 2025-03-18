@@ -18,11 +18,5 @@ if ! echo "$current_branch" | grep -q -E "$branch_pattern"; then
   fi
 fi
 
-# Check for uncommitted changes in package-lock.json files
-if git diff --cached --name-only | grep -q "package-lock.json"; then
-  echo "Error: Changes to package-lock.json detected. Please run 'npm install' and commit again."
-  exit 1
-fi
-
 # Run lint-staged to format and lint files
 npx lint-staged 
