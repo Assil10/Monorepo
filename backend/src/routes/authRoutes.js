@@ -60,6 +60,53 @@ router.use(authLimiter);
  *         password: SecurePassword123!
  *         birthdate: 1990-01-01
  *
+ *     AuthResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *         accessToken:
+ *           type: string
+ *         refreshToken:
+ *           type: string
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             accountNo:
+ *               type: integer
+ *             email:
+ *               type: string
+ *             role:
+ *               type: string
+ *             approval_status:
+ *               type: string
+ *               enum: [unverified, pending, approved, rejected]
+ *             privileges:
+ *               type: array
+ *               items:
+ *                 type: string
+ *
+ *     SignUpResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [pending]
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             email:
+ *               type: string
+ *             approval_status:
+ *               type: string
+ *               enum: [pending]
+ *
  *   securitySchemes:
  *     bearerAuth:
  *       type: http
@@ -76,8 +123,7 @@ router.use(authLimiter);
  * @swagger
  * /api/auth/sign-up:
  *   post:
- *     summary: Sign up a new user
- *     description: Register a new user account and send a verification code to their email. The account requires email verification before it can be used.
+ *     summary: Register new user
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -94,68 +140,28 @@ router.use(authLimiter);
  *             properties:
  *               name:
  *                 type: string
- *                 example: John
  *               surname:
  *                 type: string
- *                 example: Doe
  *               email:
  *                 type: string
- *                 format: email
- *                 example: john.doe@example.com
  *               password:
  *                 type: string
- *                 format: password
- *                 example: SecurePassword123!
  *               birthdate:
  *                 type: string
  *                 format: date
- *                 example: 1990-01-01
  *     responses:
  *       201:
- *         description: Sign-up request submitted successfully
+ *         description: Registration successful - Waiting for admin approval
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Sign-up request submitted successfully. Check your email for the verification code.
- *                 accountNo:
- *                   type: integer
- *                   example: 1001
+ *               $ref: '#/components/schemas/SignUpResponse'
  *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User already exists
- *       429:
- *         description: Too many requests
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Too many requests, please try again later
+ *         description: Invalid input
+ *       409:
+ *         description: Email already exists
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Server error
- *                 error:
- *                   type: string
  */
 router.post("/sign-up", authController.signUp);
 
@@ -213,8 +219,7 @@ router.post("/verify-email", authController.verifyEmail);
  * @swagger
  * /api/auth/sign-in:
  *   post:
- *     summary: Sign in an existing user
- *     description: Authenticate a user with their email and password, returning access and refresh tokens for subsequent API calls.
+ *     summary: Sign in user
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -228,59 +233,21 @@ router.post("/verify-email", authController.verifyEmail);
  *             properties:
  *               email:
  *                 type: string
- *                 format: email
- *                 example: john.doe@example.com
  *               password:
  *                 type: string
- *                 format: password
- *                 example: SecurePassword123!
+ *               rememberMe:
+ *                 type: boolean
  *     responses:
  *       200:
- *         description: Sign-in successful
+ *         description: Sign in successful
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Sign-in successful
- *                 accessToken:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *                 refreshToken:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *                 user:
- *                   type: object
- *                   properties:
- *                     accountNo:
- *                       type: integer
- *                       example: 1001
- *                     name:
- *                       type: string
- *                       example: John
- *                     surname:
- *                       type: string
- *                       example: Doe
- *                     email:
- *                       type: string
- *                       example: john.doe@example.com
- *                     profilePicture:
- *                       type: string
- *                       example: https://example.com/profile.jpg
- *       400:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       401:
  *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid email or password
  *       403:
- *         description: Account not yet verified or approved
+ *         description: Account pending approval or rejected
  *         content:
  *           application/json:
  *             schema:
@@ -288,17 +255,9 @@ router.post("/verify-email", authController.verifyEmail);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Please verify your email first
- *       429:
- *         description: Too many failed login attempts
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
+ *                 status:
  *                   type: string
- *                   example: Account temporarily locked due to too many failed login attempts. Please try again in 15 minutes.
+ *                   enum: [pending, rejected]
  *       500:
  *         description: Server error
  */

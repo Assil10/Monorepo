@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
-import { useVerifyEmail } from '@/hooks/use-auth'
+import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -16,21 +16,24 @@ import {
 import { Input } from '@/components/ui/input'
 import { PinInput, PinInputField } from '@/components/pin-input'
 
-type OtpFormProps = HTMLAttributes<HTMLDivElement>
+type ResetPasswordOtpFormProps = HTMLAttributes<HTMLDivElement>
 
 const formSchema = z.object({
   otp: z
     .string()
-    .min(4, {
-      message: 'Please enter the complete 4-digit verification code.',
+    .min(6, {
+      message: 'Please enter the complete 6-digit verification code.',
     }),
 })
 
-export function OtpForm({ className, ...props }: OtpFormProps) {
+export function ResetPasswordOtpForm({
+  className,
+  ...props
+}: ResetPasswordOtpFormProps) {
   const search = useSearch({ from: '/(auth)/otp' })
   const email = search.email as string
   const [disabledBtn, setDisabledBtn] = useState(true)
-  const verifyEmail = useVerifyEmail()
+  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,13 +42,16 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
 
   function onSubmit(data: z.infer<typeof formSchema>) {
     if (!email) {
-      // Handle missing email case
       return
     }
 
-    verifyEmail.mutate({
-      email: email,
-      code: data.otp,
+    // Navigate to the reset password page with the email and code
+    navigate({
+      to: '/reset-password',
+      search: {
+        email: email,
+        code: data.otp,
+      },
     })
   }
 
@@ -71,7 +77,7 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
                       onComplete={() => setDisabledBtn(false)}
                       onIncomplete={() => setDisabledBtn(true)}
                     >
-                      {Array.from({ length: 4 }, (_, i) => (
+                      {Array.from({ length: 6 }, (_, i) => (
                         <PinInputField
                           key={i}
                           component={Input}
@@ -84,11 +90,8 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
                 </FormItem>
               )}
             />
-            <Button
-              className='mt-2'
-              disabled={disabledBtn || verifyEmail.isPending || !email}
-            >
-              {verifyEmail.isPending ? 'Verifying...' : 'Verify'}
+            <Button className='mt-2' disabled={disabledBtn || !email}>
+              Verify Code
             </Button>
           </div>
         </form>
