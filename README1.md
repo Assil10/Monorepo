@@ -1,25 +1,50 @@
 Blockchain Workflow Documentation – Korpor Project
 1. Overview
-This document describes the technical workflow and tools used to develop, deploy, and test the blockchain component of the Korpor mobile application. The current phase focuses on validating a basic smart contract on the Ethereum Sepolia Testnet, with no cryptocurrency required from end users.
+This document describes the technical workflow and tools used to develop, deploy, test, and host the blockchain component of the Korpor mobile application. The implementation currently focuses on validating a simple smart contract on the Ethereum Sepolia Testnet, with no cryptocurrency required from end users.
 
-The blockchain is used strictly for logging and tracking investment activity, ensuring data transparency and auditability. Payments are handled off-chain.
+Blockchain is used exclusively to log and track investment activity for transparency and auditability. Payments and sensitive user data are handled off-chain.
 
 2. Technologies Used
-Technology	Purpose
-Solidity	Programming language used to develop smart contracts.
-Remix IDE	Online development environment for rapid Solidity prototyping and testing.
-Hardhat   	Local development framework for compiling, deploying, and testing smart contracts.
-Ethers.js	JavaScript library used to interact with the Ethereum blockchain programmatically.
-Node.js	    Runtime environment for executing scripts (deployment, interaction).
-Metamask	Browser wallet used to manage Ethereum test accounts and sign transactions.
-Sepolia     Testnet	Ethereum test network used for deploying and testing contracts with test ETH.
-Alchemy	    RPC provider to connect Hardhat and Ethers.js to the Sepolia testnet.
-Etherscan   (Sepolia)	Blockchain explorer to view contract deployment, transactions, and events.
+Solidity
+Used to develop the smart contract that records investment activity.
+
+Remix IDE
+Online IDE used for prototyping and testing Solidity contracts quickly with Sepolia via Metamask.
+
+Hardhat
+Local development environment for compiling, deploying, and scripting interactions with smart contracts.
+
+Ethers.js
+JavaScript library used to programmatically interact with the Ethereum blockchain.
+
+Node.js
+Used to run backend scripts for contract deployment and interaction.
+
+Metamask
+Browser wallet used to manage developer test accounts and sign transactions on Sepolia.
+
+Sepolia Testnet
+Ethereum test network used to simulate real deployments and transaction flows with test ETH.
+
+Alchemy
+RPC provider used to connect Hardhat and Ethers.js to the Sepolia testnet securely and reliably.
+
+Etherscan (Sepolia)
+Block explorer used to view smart contract deployment, transactions, and emitted events.
+
+Firebase / Supabase (Planned for Production)
+External databases planned for storing off-chain metadata (users, projects, media, etc.)
+
+Render / Railway / Vercel (Planned for Hosting)
+Free-tier backend hosting platforms for deploying APIs and admin dashboards.
+
 3. Workflow
 3.1 Contract Development
-A simple smart contract (Korpor.sol) was developed to simulate investment logging.
+A basic smart contract named Korpor.sol was developed to simulate investment logging.
 
-It defines an Investment struct with the following properties:
+It includes:
+
+A struct called Investment with fields:
 
 Investor address
 
@@ -29,89 +54,122 @@ Investment amount
 
 Timestamp
 
-It provides:
+A public function logInvestment() to write investment data on-chain
 
-logInvestment() function to write a new investment entry to the blockchain
+A public view function getAll() to retrieve all investment logs
 
-getAll() function to return the list of recorded investments
-
-NewInvestment event to emit metadata upon logging
+An event NewInvestment to notify the blockchain of new investment entries
 
 3.2 Testing Environment
 Remix IDE
-Used as the initial development and testing platform.
 
-Allowed interactive testing using the injected Web3 provider (Metamask).
+Used to quickly compile and test the contract
 
-Deployed contracts and executed transactions using the Sepolia network.
+Connected to Metamask (Sepolia) for contract deployment
+
+Allowed manual interaction with contract functions
 
 Hardhat
-Used for more structured local development and automation.
 
-Enabled:
+Used for structured project scaffolding and automation
 
-Project scaffolding
+Connected to Sepolia via Alchemy RPC
 
-Compilation of contracts
+Supported writing custom scripts to deploy and interact with the contract
 
-Custom deployment scripts
-
-Programmatic interaction using Ethers.js
-
-Connected to Sepolia via Alchemy RPC URL.
+Enabled scripting of function calls using Ethers.js
 
 3.3 Wallet Configuration
-Metamask was used to manage the developer account and connect to the Sepolia network.
+Metamask wallet was connected to the Sepolia testnet
 
-The wallet was funded with test ETH from a Sepolia faucet to cover gas fees during deployment and testing.
+The wallet was funded with test ETH from a Sepolia faucet
+
+Used to confirm transactions in both Remix and Hardhat environments
 
 3.4 Deployment Process
 Using Remix IDE
-Compile the contract in Remix.
 
-Connect to Sepolia via Metamask (Injected Provider).
+Compile contract via the Remix Solidity compiler
 
-Deploy the contract and confirm in Metamask.
+Select Injected Web3 provider (Metamask) connected to Sepolia
 
-Execute functions directly within the Remix interface.
+Deploy contract and confirm the transaction in Metamask
+
+Test function calls in the Remix UI
 
 Using Hardhat
-Initialize a new Hardhat project (npx hardhat).
 
-Create the Solidity contract in /contracts/Korpor.sol.
+Initialize the project using npx hardhat
 
-Configure Sepolia in hardhat.config.js using:
+Write contract in contracts/Korpor.sol
 
-RPC URL from Alchemy
+Configure hardhat.config.js with Sepolia RPC and private key via .env
 
-Private key from Metamask (stored in .env)
+Create a deployment script in scripts/deploy.js
 
-Write deployment script in /scripts/deploy.js.
+Deploy contract with:
 
-Deploy using:
-
-bash
+arduino
 Copy
 Edit
 npx hardhat run scripts/deploy.js --network sepolia
 3.5 Interaction and Logging
-Interactions with the smart contract were tested through:
+Contract interaction was tested via:
 
-Remix interface (manually)
+Manual calls in Remix IDE
 
-Custom Node.js script using Ethers.js (programmatically)
+Node.js script using Ethers.js to simulate real interaction
 
-Example usage:
+Example:
 
-logInvestment("Project123", 1000)
+logInvestment("ProjectX", 5000) was used to simulate a logged investment
 
-Fetch all logs using getAll()
+getAll() was used to retrieve a list of logged transactions
 
-Events were successfully emitted and visible on Sepolia Etherscan.
+Emitted NewInvestment events were verified via Sepolia Etherscan.
 
 3.6 Blockchain Explorer Usage
-The deployed contract was located and monitored using Sepolia Etherscan.
+The contract and its transactions were inspected using Sepolia Etherscan
 
-Transactions, event logs, and function calls were reviewed and confirmed.
+Verified contract deployment address, input data, and output logs
 
-This ensured proper state changes and contract functionality
+Ensured that state changes matched expected behavior after function calls
+
+4. Hosting and Data Management Workflow
+4.1 Blockchain Data
+Only essential transaction data (investor address, project ID, amount, timestamp) is stored on-chain
+
+No personal user data or media is stored on the blockchain
+
+Blockchain is used for audit trails and proof of transaction
+
+4.2 Off-Chain Data (Planned)
+User profiles, documents, and project metadata will be stored in a secure off-chain database such as Firebase or Supabase
+
+This ensures GDPR compliance and reduces blockchain storage costs
+
+4.3 Backend and API Hosting (Planned)
+The backend (e.g., Node.js/Express or NestJS) will be hosted on Render, Railway, or Vercel
+
+This API will:
+
+Handle payment verification (e.g., Stripe, PayPal)
+
+Call the smart contract functions after payment confirmation
+
+Serve data to the mobile app via REST/GraphQL endpoints
+
+4.4 Frontend Access
+The mobile app will not directly interact with the blockchain
+
+It will fetch verified data from the backend, which securely handles blockchain interactions
+
+Future updates may include admin dashboards for real-time blockchain event monitoring
+
+This workflow ensures a reliable separation of responsibilities:
+
+Blockchain handles public, immutable investment logs
+
+The backend handles payments, permissions, and user identities
+
+Off-chain storage ensures performance and regulatory compliance
