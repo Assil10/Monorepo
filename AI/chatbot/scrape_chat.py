@@ -116,6 +116,18 @@ def get_blogs_data(link_lst,section_type):
         else:
             blogs_data_lst=fill_other_subtopic(number_of_subtopics_h2,section,"h2",section_type,question.text,blogs_data_lst)
     return blogs_data_lst
+def scrape_data(blog_type_lst,website_link_lst,json_name):
+    for p in range(3):
+        print("start scraping ",blog_type_lst[p],' page')
+        blogs_link_lst=get_blogs_links(website_link_lst[p])
+        print("Number of blogs to scrape: ",len(blogs_link_lst))
+        blogs_data=get_blogs_data(blogs_link_lst,blog_type_lst[p])
+        print("end scraping ",blog_type_lst[p],' page')
+        filename = json_name[p]
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(blogs_data, f, indent=4)
+
+        print(f"JSON file '{filename}' has been created.")
 
 options = Options()
 options.headless = True  # Run in headless mode (no browser UI)
@@ -127,21 +139,25 @@ options.add_argument("--disable-dev-shm-usage")  # Improve performance in Docker
 service = Service(GeckoDriverManager().install())
 driver = webdriver.Firefox(service=service, options=options)
 
-# Open the website
+# scraping english data
 blog_type_lst=['Laws','Real Estate','Registration']
 website_link_lst=['https://al-mindhar.com/category/laws/page/','https://al-mindhar.com/category/real-estate/page/','https://al-mindhar.com/category/registration/page/']
-json_name=['laws.json','real_state.json','registration.json']
-for p in range(3):
-    print("start scraping ",blog_type_lst[p],' page')
-    blogs_link_lst=get_blogs_links(website_link_lst[p])
-    print("Number of blogs to scrape: ",len(blogs_link_lst))
-    blogs_data=get_blogs_data(blogs_link_lst,blog_type_lst[p])
-    print("end scraping ",blog_type_lst[p],' page')
-    filename = json_name[p]
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(blogs_data, f, indent=4)
+json_name=['laws_en.json','real_state_en.json','registration_en.json']
+print("start scraping english data")
+scrape_data(blog_type_lst,website_link_lst,json_name)
+# scraping frensh data
+blog_type_lst=['Laws','Real Estate','Registration']
+website_link_lst=['https://al-mindhar.com/fr/category/laws/page/','https://al-mindhar.com/fr/category/real-estate/page/','https://al-mindhar.com/fr/category/registration/page/']
+json_name=['laws_fr.json','real_state_fr.json','registration_fr.json']
+print("start scraping frensh data")
+scrape_data(blog_type_lst,website_link_lst,json_name)
+# scraping arabic data
+blog_type_lst=['Laws','Real Estate','Registration']
+website_link_lst=['https://al-mindhar.com/ar/category/laws/page/','https://al-mindhar.com/ar/category/real-estate/page/','https://al-mindhar.com/ar/category/registration/page/']
+json_name=['laws_ar.json','real_state_ar.json','registration_ar.json']
+print("start scraping arabic data")
+scrape_data(blog_type_lst,website_link_lst,json_name)
 
-    print(f"JSON file '{filename}' has been created.")
-
+print("scraping ended")
 # Close the driver
 driver.quit()
