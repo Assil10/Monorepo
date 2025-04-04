@@ -1,6 +1,7 @@
 # Import necessary packages
 from langchain_chroma import Chroma
-from langchain_ollama import OllamaLLM, OllamaEmbeddings
+from langchain_ollama import OllamaLLM
+from langchain_huggingface import HuggingFaceEmbeddings
 # Document processing and retrieval  
 from langchain.text_splitter import RecursiveCharacterTextSplitter  # Splits text into smaller chunks for better embedding and retrieval
 from langchain.schema import Document
@@ -42,8 +43,11 @@ def detect_language(text):
 
 #load data
 data = load_data('data.json')
-# Create embeddings using OllamaEmbeddings 
-embeddings = OllamaEmbeddings(model="mistral")
+# Create embeddings using HuggingFaceEmbeddings
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    model_kwargs={'device': 'cpu'}
+)
 
 # Define your persist directory
 persist_directory = "./chroma_db"
@@ -59,19 +63,19 @@ else:
 
 
 # Enhanced prompt template
-prompt = ChatPromptTemplate.from_template("""
-You are a legal expert on Tunisian real estate law. Answer the question using ONLY the provided context.
-If the context doesn't contain the answer, say "I don't have information about this specific aspect of Tunisian law."
+# Enhanced prompt template
+prompt = ChatPromptTemplate.from_template(""" use the following context to answer the user query.
+context: {context}
+user query: {question}
 
-Context: {context}
-
-Question: {question}
-
-Answer in clear, professional language:
+if you don't know the answer, just say that you don't know, don't try to make up an answer.
 """)
 
-
-llm = OllamaLLM(model="mistral", temperature=0.3)
+# Modify LLM settings for more deterministic output
+llm = OllamaLLM(
+    model="deepseek-r1:1.5b",
+    temperature=0.3,  # Lower temperature for more deterministic outputs
+)
 #retriever
 retriever = vectorstore.as_retriever(search_type="similarity",search_kwargs={"k":2})
 chain = (
