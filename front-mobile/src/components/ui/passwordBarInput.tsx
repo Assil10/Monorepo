@@ -45,8 +45,7 @@ export default function PasswordInput({
       {/* Eye Icon Button */}
       <TouchableOpacity
         onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-        className="absolute right-1 transform -translate-y-1 flex items-center justify-center"
-        style={{ height: 48, width: 40 }}
+        className="absolute right-1 transform -translate-y-1 flex items-center justify-center h-12 w-10"
       >
         <Image
           source={isPasswordVisible ? blueEye : grayEye}

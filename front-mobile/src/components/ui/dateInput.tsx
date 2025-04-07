@@ -20,10 +20,7 @@ export default function DateInput({
         value={value}
         editable={false} // Make it non-editable so users can only change via the picker
       />
-      <View
-        className="absolute right-1 flex items-center justify-center"
-        style={{ height: 48, width: 40 }} // Adjusted touchable area
-      >
+      <View className="absolute right-1 flex items-center justify-center h-12 w-10">
         <Image
           source={calendarIcon}
           className="w-5 h-5 transform -translate-y-1"

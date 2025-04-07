@@ -27,10 +27,10 @@ export default function SignupCard() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSignup = () => {
-    // Reset error on each signup attempt
     setErrorMessage("");
 
-    // Validate fields
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (
       !name.trim() ||
       !surname.trim() ||
@@ -41,8 +41,12 @@ export default function SignupCard() {
       return;
     }
 
+    if (!emailRegex.test(email)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
     try {
-      // If everything's okay, navigate to the next screen
       router.push({
         pathname: "/auth/Signup/password",
         params: {
@@ -53,7 +57,6 @@ export default function SignupCard() {
         },
       });
     } catch (error) {
-      // Catch any unexpected errors
       setErrorMessage("Something went wrong. Please try again.");
     }
   };

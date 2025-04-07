@@ -2,7 +2,6 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { PasswordCard } from "@/components/architect";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-const BackgroundImage = require("@/assets/background.png");
 const BackButton = require("@/assets/back.png");
 const Lock = require("@/assets/lock.png");
 
