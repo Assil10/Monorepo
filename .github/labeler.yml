@@ -1,0 +1,43 @@
+# This file maps file paths in a pull request to labels.
+# When a file that matches one of the patterns is modified,
+# the corresponding label will be automatically added to the PR.
+
+blockchain:
+  - "blockchain/**"
+  - "smart-contracts/**"
+  - "**/*.sol"         # Solidity smart contracts
+
+backend:
+  - "backend/**"
+  - "server/**"
+  - "api/**"
+  - "database/**"
+  - "services/**"      # any additional backend services folder
+
+frontend:
+  - "frontend/**"
+  - "client/**"
+  - "ui/**"
+  - "**/*.jsx"
+  - "**/*.tsx"
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.scss"
+
+ai:
+  - "ai/**"
+  - "ml/**"
+  - "models/**"
+  - "notebooks/**"
+  - "**/*.ipynb"       # Jupyter notebooks for AI/ML work
+
+docs:
+  - "**/*.md"
+  - "**/*.rst"
+
+tests:
+  - "tests/**"
+  - "**/*.spec.js"
+  - "**/*.test.js"
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
