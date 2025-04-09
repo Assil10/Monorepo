@@ -53,6 +53,14 @@ const options = {
       {
         name: 'Roles',
         description: 'Role-based access control operations'
+      },
+      {
+        name: 'Mobile App',
+        description: 'Endpoints specifically for the mobile application'
+      },
+      {
+        name: 'Backoffice',
+        description: 'Endpoints specifically for the backoffice/admin panel'
       }
     ],
     externalDocs: {
