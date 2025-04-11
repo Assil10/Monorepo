@@ -1,0 +1,52 @@
+what I asked  :
+in this folder we have retireived document for 3 queries and for each query we have different  response from differennt llms
+
+file names structure : retrieved_documents_query0 , retrieved_documents_query1 , retrieved_documents_query2
+
+and for each response we ahve the model name + response + query number
+
+I want  you to compare each model respons to the document retrieved, did it sucessfuly take the inforamtions and generated a humain readable respond without removing , adding extra informations
+
+and in the end give me the best llm response
+
+for exemple
+
+u read retrieved_documents_query0 and see if gemini-1.5-flash_response_query0 succesfuly generated an answer and than compare models results
+
+Important : we have 3 queries , so compare only the document for the correspendant query and the llm responses for the same qeurty
+
+not llm 2 resposn to querty 0 and llm 5 to querty 1
+
+no , it has to be llm 2 response to querty 0 and llm 5 to the same qeurty  0
+
+I'll analyze the retrieved documents and corresponding LLM responses for each query to determine which model performed best.
+
+## Analysis of Query 0: "The Legal Requirements For Real Estate Development In Tunisia?"
+After examining the retrieved documents for query 0 and comparing them with the model responses, I found that:
+
+- The retrieved documents contain comprehensive information about legal requirements for real estate development in Tunisia, including project planning, licensing, compliance with land laws, environmental standards, and more.
+- gemini-1.5-pro provided the most complete response that closely followed the source material. It maintained the structured format with clear section headings, covered all key points from the retrieved documents, and presented the information in a natural, human-readable style without adding external information.
+- gemini-2.5-pro-exp-03-25 also performed well, but occasionally simplified some sections, which resulted in minor information loss compared to the original documents.
+- gemini-1.5-flash produced a more condensed response that, while accurate, omitted some details present in the original documents.
+## Analysis of Query 1: "What regulatory compliance is required for property development projects in Tunisia?"
+For this query, which is semantically similar to the first:
+
+- The retrieved documents were largely the same as for query 0, focusing on regulatory requirements for property development.
+- gemini-1.5-pro again provided the most comprehensive response, maintaining the structure and details from the source documents while presenting them in a natural way.
+- gemini-2.5-pro-exp-03-25 performed slightly better on this query than the first, with good coverage of the regulatory aspects.
+- gemini-1.5-flash continued to provide more concise responses that, while accurate, didn't include all details from the source.
+## Analysis of Query 2: "What permits and legal standards must be followed when developing real estate in Tunisia"
+For this third query, which focuses specifically on permits and standards:
+
+- The retrieved documents again contained similar information to the previous queries, with emphasis on permits and legal standards.
+- gemini-1.5-pro maintained its strong performance, with excellent coverage of the permits and standards mentioned in the source documents.
+- gemini-2.5-pro-exp-03-25 performed well but occasionally reorganized information in ways that slightly deviated from the source structure.
+- gemini-1.5-flash provided accurate but more condensed information.
+## Overall Best Model
+Based on this analysis, gemini-1.5-pro consistently provided the best responses across all three queries. It excelled at:
+
+1. Maintaining comprehensive coverage of information from the source documents
+2. Preserving the original structure while making it readable
+3. Not adding external information beyond what was in the retrieved documents
+4. Presenting the information in a natural, human-readable style
+This model would be the recommended choice for your chatbot application as it provides the most faithful yet readable transformation of the retrieved information.

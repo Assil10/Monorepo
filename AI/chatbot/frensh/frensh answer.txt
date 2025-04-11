@@ -1,0 +1,32 @@
+'ll analyze the French repository documents and LLM responses for each query to determine which model performed best at generating accurate, human-readable responses without adding or removing information.
+
+## Analysis for Query 0: "Quelles Sont Les Exigences LÉGales Pour Le DÉVeloppement Immobilier En Tunisie?"
+After examining the retrieved documents and comparing them with the model responses, I found:
+
+- The retrieved documents contain comprehensive information about legal requirements for real estate development in Tunisia, including project planning, licensing, compliance with land laws, and environmental standards.
+- gemini-1.5-pro provided the most complete response that closely followed the source material. It maintained the structured format with clear section headings (Planification et Conception, Licences et Construction, etc.), covered all key points from the retrieved documents, and presented the information in a natural, human-readable style without adding external information.
+- gemini-1.5-flash produced a more condensed response that, while accurate, omitted some details present in the original documents, particularly in the sections about environmental standards and property registration.
+- gemini-2.5-pro-exp-03-25 performed well but occasionally simplified some sections, which resulted in minor information loss compared to the original documents.
+## Analysis for Query 1: "Quelles sont les procédures administratives à suivre pour un projet immobilier en Tunisie?"
+For this query about administrative procedures:
+
+- The retrieved documents focused on the permit acquisition process and administrative requirements.
+- gemini-1.5-pro again provided the most comprehensive response, maintaining the structure and details from the source documents while presenting them in a natural way. It properly covered all the administrative steps from project preparation to property registration.
+- gemini-2.5-pro-exp-03-25 performed slightly better on this query than the first, with good coverage of the administrative procedures.
+- gemini-1.5-flash continued to provide more concise responses that, while accurate, didn't include all details from the source.
+## Analysis for Query 3: "Quels permis et autorisations sont nécessaires pour développer un bien immobilier en Tunisie?"
+For this third query focusing specifically on permits and authorizations:
+
+- The retrieved documents contained information about various permits and authorizations required for real estate development.
+- gemini-1.5-pro maintained its strong performance, with excellent coverage of the permits and authorizations mentioned in the source documents. It properly detailed the urban planning permit, construction permit, and special licenses.
+- gemini-2.5-pro-exp-03-25 performed well but occasionally reorganized information in ways that slightly deviated from the source structure.
+- gemini-1.5-flash provided accurate but more condensed information about the permits.
+## Overall Best Model
+Based on this analysis, gemini-1.5-pro consistently provided the best responses across all three French queries. It excelled at:
+
+1. Maintaining comprehensive coverage of information from the source documents
+2. Preserving the original structure while making it readable
+3. Not adding external information beyond what was in the retrieved documents
+4. Presenting the information in a natural, human-readable style in French
+5. Properly handling the French language nuances and terminology
+This model would be the recommended choice for your French language chatbot application as it provides the most faithful yet readable transformation of the retrieved information.
