@@ -1,24 +1,17 @@
 # Import necessary packages
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_ollama import OllamaLLM
 from langchain_huggingface import HuggingFaceEmbeddings
 # Document processing and retrieval  
-from langchain.text_splitter import RecursiveCharacterTextSplitter  # Splits text into smaller chunks for better embedding and retrieval
 from langchain.schema import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-import re  # Provides tools for working with regular expressions, useful for text cleaning and pattern matching
 import json
 import os
 from langdetect import detect
 from elevenlabs.client import ElevenLabs
-from elevenlabs import play
-from openai import OpenAI
-from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from proto.message import google
 
 def load_data(json_file):
     with open(json_file, 'r', encoding='utf-8') as file:
@@ -194,6 +187,6 @@ def main(model_name,query):
 if __name__ == "__main__":
     load_dotenv()
     client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
-    model_name = "models/gemini-1.5-pro-001"
+    model_name = "models/gemini-1.5-pro"
     user_query = "co ownership"
     main(model_name,user_query)
