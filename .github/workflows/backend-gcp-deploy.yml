@@ -13,7 +13,7 @@ env:
   GCP_REGION: 'us-central1' # The region where your Cloud Run service is
   CLOUD_RUN_SERVICE_NAME: 'korpor' # The name of your Cloud Run service
   # Use the correct owner (ahmedjaziri31)
-  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/Monorepo/backend-service
+  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/monorepo/backend-service
 
 # --- Concurrency Control ---
 # Ensure only one run happens at a time for the main branch push trigger
