@@ -64,18 +64,39 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        # Export the SA key to a file path for easy access
+        export_environment_variables: true
+        create_credentials_file: true
 
     # Add debugging steps to check authentication and repository access
     - name: Debug - Check GCP authentication
       run: |
+        # Install jq for JSON parsing
+        sudo apt-get update
+        sudo apt-get install -y jq
+        
         gcloud config list
         gcloud projects describe ${{ env.GCP_PROJECT_ID }}
         
+        # Check if required APIs are enabled
+        echo "Checking if Artifact Registry API is enabled..."
+        gcloud services list --project=${{ env.GCP_PROJECT_ID }} | grep artifactregistry.googleapis.com || \
+          (echo "Artifact Registry API is not enabled, enabling now..." && \
+           gcloud services enable artifactregistry.googleapis.com --project=${{ env.GCP_PROJECT_ID }})
+
     - name: Ensure project-level permissions
       run: |
-        # Get the authenticated account email
-        SA_EMAIL=$(gcloud config get account)
+        # Create a file with the service account key for processing
+        echo '${{ secrets.GCP_SA_KEY }}' > /tmp/sa-key.json
+        
+        # Extract the service account email from the JSON key
+        SA_EMAIL=$(jq -r '.client_email' /tmp/sa-key.json)
         echo "Authenticated as: $SA_EMAIL"
+        
+        if [ -z "$SA_EMAIL" ]; then
+          echo "Error: Failed to extract service account email from credentials"
+          exit 1
+        fi
         
         # Verify and add the Artifact Registry Admin role at the project level
         echo "Ensuring Artifact Registry Admin role..."
@@ -88,11 +109,21 @@ jobs:
         gcloud projects add-iam-policy-binding ${{ env.GCP_PROJECT_ID }} \
           --member="serviceAccount:$SA_EMAIL" \
           --role="roles/storage.admin"
+        
+        # Clean up the temporary file
+        rm /tmp/sa-key.json
 
     - name: Debug - Check and fix Artifact Registry permissions
       run: |
-        # Check if the credentials are available
-        echo "Using credentials from google-github-actions/auth"
+        # Extract service account email again (couldn't pass between steps)
+        echo '${{ secrets.GCP_SA_KEY }}' > /tmp/sa-key.json
+        SA_EMAIL=$(jq -r '.client_email' /tmp/sa-key.json)
+        echo "Authenticated as: $SA_EMAIL"
+        
+        if [ -z "$SA_EMAIL" ]; then
+          echo "Error: Failed to extract service account email from credentials"
+          exit 1
+        fi
         
         # Check if the repository exists
         gcloud artifacts repositories describe ${{ env.GAR_REPOSITORY }} \
@@ -104,16 +135,16 @@ jobs:
              --location=${{ env.GCP_REGION }} \
              --description="Repository for backend images")
              
-        # Grant permissions - get service account email from gcloud config
+        # Grant permissions using the extracted service account email
         echo "Ensuring service account has proper permissions..."
-        SA_EMAIL=$(gcloud config get account)
-        echo "Authenticated as: $SA_EMAIL"
-        
         gcloud artifacts repositories add-iam-policy-binding ${{ env.GAR_REPOSITORY }} \
           --project=${{ env.GCP_PROJECT_ID }} \
           --location=${{ env.GCP_REGION }} \
           --member="serviceAccount:$SA_EMAIL" \
           --role="roles/artifactregistry.writer"
+          
+        # Clean up the temporary file
+        rm /tmp/sa-key.json
 
     - name: Configure Docker for Artifact Registry
       run: |
@@ -122,9 +153,12 @@ jobs:
     # This step creates a Docker credential helper that will properly authenticate with Artifact Registry
     - name: Set up Docker credentials to Artifact Registry
       run: |
-        echo "${{ secrets.GCP_SA_KEY }}" > key.json
-        cat key.json | docker login -u _json_key --password-stdin https://${{ env.GCP_REGION }}-docker.pkg.dev
-        rm key.json
+        # Using the credentials file created by google-github-actions/auth
+        cat $GOOGLE_APPLICATION_CREDENTIALS | docker login -u _json_key --password-stdin https://${{ env.GCP_REGION }}-docker.pkg.dev
+        
+        # Verify Docker can access the registry
+        echo "Verifying Docker registry access..."
+        docker pull hello-world || echo "Could not pull hello-world, but continuing..."
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
