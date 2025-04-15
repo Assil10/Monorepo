@@ -1,43 +1,132 @@
-name: Backend Service CI/CD
+name: Backend CI/CD to Google Cloud Run
 
+# --- Trigger Conditions ---
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [ main ] # Deploy when pushing to the main branch
+    paths:
+      - 'backend/**' # Only run if files in the backend folder change
 
+# --- Environment Variables ---
+env:
+  GCP_PROJECT_ID: 'cellular-way-454315-f2' # Your GCP Project ID
+  GCP_REGION: 'us-central1' # The region where your Cloud Run service is
+  CLOUD_RUN_SERVICE_NAME: 'korpor' # The name of your Cloud Run service
+  # Use the correct owner (ahmedjaziri31)
+  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/Monorepo/backend-service
+
+# --- Concurrency Control ---
+# Ensure only one run happens at a time for the main branch push trigger
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# --- Jobs ---
 jobs:
-  build:
+  # --- Job 1: Build, Test, and Push Docker image to GHCR ---
+  build-and-push-ghcr:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Set the working directory to your backend folder
+        working-directory: ./backend
+    permissions:
+      contents: read
+      packages: write # Required to push to GHCR
+      # Required for Workload Identity Federation
+      id-token: 'write'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        # Ensure this matches the Node.js version your backend needs
+        node-version: '18'
+        # Enable caching for npm dependencies
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json # Path relative to repo root
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install dependencies
+      run: npm install # Changed from ci as package-lock might not always be committed
 
-      - name: Run tests
-        run: npm test
+    # --- Optional Linting/Testing Steps ---
+    # Uncomment these if you have lint/test scripts in backend/package.json
+    # - name: Run Linters
+    #   run: npm run lint
+    # - name: Run Tests
+    #   run: npm test
 
-      - name: Build project
-        run: npm run build
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }} # Built-in token
 
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        run: docker build -t ${{ env.GHCR_IMAGE_NAME }} .
+    - name: Build and push Docker image to GHCR
+      id: build-push
+      uses: docker/build-push-action@v5
+      with:
+        context: . # Build context root (Monorepo/)
+        dockerfile: ./backend/Dockerfile # Path relative to context
+        push: true
+        tags: ${{ env.GHCR_IMAGE_NAME }}:${{ github.sha }} # Tag with commit SHA
+        labels: |
+          org.opencontainers.image.source=${{ github.repositoryUrl }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        # Enable Docker layer caching
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
-      - name: Push Docker image
-        run: docker push ${{ env.GHCR_IMAGE_NAME }}
+  # --- Job 2: Deploy the image to Google Cloud Run ---
+  deploy-to-cloud-run:
+    needs: build-and-push-ghcr # Run after building/pushing
+    runs-on: ubuntu-latest
+    # Permissions needed for GCP auth and deployment
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for Workload Identity Federation
 
-env:
-  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/Monorepo/backend-service
+    steps:
+    # Authenticate to Google Cloud using Workload Identity Federation (Recommended)
+    # Requires setup in GCP: Create a WIF Pool, Provider, and link to Service Account
+    - name: Authenticate to Google Cloud via WIF
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        # Replace with your Workload Identity Provider details from GCP
+        workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/YOUR_POOL_ID/providers/YOUR_PROVIDER_ID'
+        # Replace with the email of the Service Account GitHub Actions should impersonate
+        service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+
+    # --- Alternative: Authenticate using Service Account Key JSON ---
+    # Keep this commented out if using WIF above
+    # - name: Authenticate to Google Cloud via SA Key
+    #   id: auth
+    #   uses: google-github-actions/auth@v2
+    #   with:
+    #     credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: ${{ env.CLOUD_RUN_SERVICE_NAME }}
+        region: ${{ env.GCP_REGION }}
+        # Deploy the specific image tagged with the commit SHA
+        image: ${{ env.GHCR_IMAGE_NAME }}:${{ github.sha }}
+        # Optional: Set platform to 'managed' if needed, default is usually fine
+        # platform: 'managed'
+        # Optional: Allow unauthenticated access if required by your service
+        # allow_unauthenticated: true
+
+    # Optional: Output the deployed service URL
+    - name: Show Deployed URL
+      if: success() # Only run if deployment step succeeds
+      run: echo "Deployed successfully to ${{ steps.deploy.outputs.url }}"
