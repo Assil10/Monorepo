@@ -47,7 +47,7 @@ jobs:
         node-version: '18'
 
     - name: Install dependencies
-      run: npm install # Changed from ci as package-lock might not always be committed
+      run: npm install --legacy-peer-deps # Changed from ci as package-lock might not always be committed
 
     # --- Optional Linting/Testing Steps ---
     # Uncomment these if you have lint/test scripts in backend/package.json
