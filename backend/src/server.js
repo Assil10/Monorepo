@@ -95,12 +95,54 @@ app.get("/db-health", async (req, res) => {
     // Test the database connection using the testConnection function
     await testConnection();
 
-    // Return success if the connection test passed
+    // Get database info including table names using Sequelize's query interface
+    const { sequelize } = require("./config/db.config");
+
+    // Query to get all table names based on the database type (MySQL)
+    const [tables] = await sequelize.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = :dbName AND table_type = 'BASE TABLE'",
+      {
+        replacements: { dbName: process.env.DB_NAME || "korpor_dev" },
+      },
+    );
+
+    // Extract table names from result
+    const tableNames = tables.map(
+      (table) => table.table_name || table.TABLE_NAME,
+    );
+
+    // Get row counts for each table
+    const tableDetails = await Promise.all(
+      tableNames.map(async (tableName) => {
+        try {
+          const [result] = await sequelize.query(
+            `SELECT COUNT(*) as count FROM \`${tableName}\``,
+          );
+          const count = result[0].count;
+          return {
+            name: tableName,
+            rows: count,
+          };
+        } catch (err) {
+          console.error(`Error getting row count for table ${tableName}:`, err);
+          return {
+            name: tableName,
+            rows: "Error: Could not count rows",
+            error: err.message,
+          };
+        }
+      }),
+    );
+
+    // Return success with table information
     res.status(200).json({
       status: "OK",
       database: "Connected",
       timestamp: new Date(),
       message: "Database connection is healthy",
+      dbName: process.env.DB_NAME || "korpor_dev",
+      tables: tableDetails,
+      tableCount: tableNames.length,
     });
   } catch (error) {
     // Return error if the connection test failed
