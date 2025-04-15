@@ -11,10 +11,12 @@ const { testConnection } = require("./config/db.config");
 const { syncModels } = require("./models");
 
 // Import routes
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const roleRoutes = require("./routes/roleRoutes");
+const propertyRoutes = require("./routes/propertyRoutes"); // Import property routes
 
 const app = express();
 
@@ -75,10 +77,12 @@ app.use(globalLimiter);
 setupSwagger(app);
 
 // Mount routes
+
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api", propertyRoutes); // Mount property routes
 
 // Add health check endpoint
 app.get("/health", (req, res) => {
