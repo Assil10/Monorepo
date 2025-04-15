@@ -94,25 +94,22 @@ jobs:
 
     steps:
     # Authenticate to Google Cloud using Workload Identity Federation (Recommended)
-    # Requires setup in GCP: Create a WIF Pool, Provider, and link to Service Account
-    - name: Authenticate to Google Cloud via WIF
-      id: auth
-      uses: google-github-actions/auth@v2
-      with:
-        # Replace with your Workload Identity Provider details from GCP
-        workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
-        # Replace with the email of the Service Account GitHub Actions should impersonate
-        service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
-        # Set to false as this job doesn't need the credentials file
-        create_credentials_file: false
-
-    # --- Alternative: Authenticate using Service Account Key JSON ---
-    # Keep this commented out if using WIF above
-    # - name: Authenticate to Google Cloud via SA Key
+    # Commenting out WIF authentication due to persistent issues
+    # - name: Authenticate to Google Cloud via WIF
     #   id: auth
     #   uses: google-github-actions/auth@v2
     #   with:
-    #     credentials_json: '${{ secrets.GCP_SA_KEY }}'
+    #     workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+    #     service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+    #     create_credentials_file: false
+
+    # --- Alternative: Authenticate using Service Account Key JSON ---
+    # Uncommenting SA Key authentication
+    - name: Authenticate to Google Cloud via SA Key
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
     - name: Deploy to Cloud Run
       id: deploy
