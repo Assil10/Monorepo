@@ -45,9 +45,6 @@ jobs:
       with:
         # Ensure this matches the Node.js version your backend needs
         node-version: '18'
-        # Enable caching for npm dependencies
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json # Path relative to repo root
 
     - name: Install dependencies
       run: npm install # Changed from ci as package-lock might not always be committed
