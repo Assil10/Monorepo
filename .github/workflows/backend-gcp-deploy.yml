@@ -103,6 +103,8 @@ jobs:
         workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
         # Replace with the email of the Service Account GitHub Actions should impersonate
         service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+        # Set to false as this job doesn't need the credentials file
+        create_credentials_file: false
 
     # --- Alternative: Authenticate using Service Account Key JSON ---
     # Keep this commented out if using WIF above

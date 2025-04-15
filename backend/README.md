@@ -3,7 +3,7 @@
 This repository contains a Node.js Express backend that provides authentication, user management, and role-based access control.
 It also integrates with Cloudinary for image uploads and includes Swagger for API documentation.
 
-## Database Migration Notice ,
+## Database Migration Notice ,,
 
 **IMPORTANT**: This backend has been migrated from MongoDB to MySQL. For detailed MySQL setup instructions, refer to the [MySQL Migration Guide](./README-MYSQL.md).
 
