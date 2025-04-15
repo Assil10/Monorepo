@@ -72,7 +72,7 @@ jobs:
       id: build-push
       uses: docker/build-push-action@v5
       with:
-        context: . # Build context root (Monorepo/)
+        context: ./backend # Build context root (./backend)
         file: ./backend/Dockerfile # Path relative to context
         push: true
         # Use the Artifact Registry image path

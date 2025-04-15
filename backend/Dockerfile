@@ -4,9 +4,9 @@ WORKDIR /app
 
 # Copy only package files first for better caching
 # Explicitly copy package.json from the backend directory within the context
-COPY backend/package.json ./
+COPY package.json ./ 
 # If package-lock.json exists, copy it too (optional but good for npm install)
-# COPY backend/package-lock.json ./
+COPY package-lock.json* ./
 
 # Use npm install instead of npm ci
 RUN npm install
@@ -37,9 +37,9 @@ WORKDIR /app
 # Copy installed node_modules
 COPY --from=dependencies /app/node_modules ./node_modules
 # Copy package files
-COPY backend/package*.json ./
+COPY package*.json ./
 # Copy all necessary source code and config files from the backend directory in the context
-COPY backend/ ./ 
+COPY . ./ 
 # Note: This single command replaces the multiple COPY commands for src, config, controllers, etc.
 
 # Production stage
