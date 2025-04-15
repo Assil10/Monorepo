@@ -71,8 +71,11 @@
 ## VI. Testing the Pipeline
 
 - [x] **Commit & Push:** Have you committed the `.github/workflows/backend-gcp-deploy.yml` file and pushed it to the `main` branch?
-- [x] **Workflow Run:** Did the GitHub Actions workflow trigger and run successfully? (Check the "Actions" tab in your GitHub repo). (Ran successfully after permission fix)
-- [ ] **Cloud Run Revision:** Does your `korpor` service in Cloud Run show a new revision deployed with the image tag matching the latest commit SHA? (Needs verification)
-- [ ] **Service Access:** Can you access the URL provided by Cloud Run for your `korpor` service? (Needs verification)
-- [ ] **Database Connectivity:** Does the deployed application successfully connect to the Cloud SQL database? (Check the logs for your `korpor` service in the Google Cloud Console for any connection errors). (Needs verification)
-- [ ] **Functionality:** Do the API endpoints of your deployed backend service work as expected, especially those interacting with the database? (Needs verification)
+- [ ] **Workflow Run:** Did the GitHub Actions workflow trigger and run successfully? (Check the "Actions" tab in your GitHub repo).
+  - [ ] Did the `build-and-push-gar` job complete without errors?
+  - [ ] Did the `deploy-to-cloud-run` job complete without errors?
+  - [ ] Did the `Test Deployed Service Health Endpoint` step complete without errors?
+- [ ] **Cloud Run Revision:** Does your `korpor` service in Cloud Run show a new revision deployed with the image tag matching the latest commit SHA?
+- [ ] **Service Access:** Can you access the URL provided by Cloud Run for your `korpor` service? (Verify `/health` endpoint manually too).
+- [ ] **Database Connectivity:** Does the deployed application successfully connect to the Cloud SQL database? (Check the logs for your `korpor` service in the Google Cloud Console for any connection errors).
+- [ ] **Functionality:** Do the API endpoints of your deployed backend service work as expected, especially those interacting with the database?

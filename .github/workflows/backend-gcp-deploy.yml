@@ -114,3 +114,8 @@ jobs:
     - name: Show Deployed URL
       if: success() # Only run if deployment step succeeds
       run: echo "Deployed successfully to ${{ steps.deploy.outputs.url }}"
+
+    # Add step to test the health endpoint
+    - name: Test Deployed Service Health Endpoint
+      if: success() # Only run if deployment step succeeded
+      run: curl --fail --silent --show-error ${{ steps.deploy.outputs.url }}/health
