@@ -65,6 +65,67 @@ jobs:
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
+    # Add debugging steps to check authentication and repository access
+    - name: Debug - Check GCP authentication
+      run: |
+        gcloud config list
+        gcloud projects describe ${{ env.GCP_PROJECT_ID }}
+        
+    - name: Ensure project-level permissions
+      run: |
+        # Get the authenticated account email
+        SA_EMAIL=$(gcloud config get account)
+        echo "Authenticated as: $SA_EMAIL"
+        
+        # Verify and add the Artifact Registry Admin role at the project level
+        echo "Ensuring Artifact Registry Admin role..."
+        gcloud projects add-iam-policy-binding ${{ env.GCP_PROJECT_ID }} \
+          --member="serviceAccount:$SA_EMAIL" \
+          --role="roles/artifactregistry.admin"
+          
+        # Add the Storage Admin role just to be safe (covers older Container Registry too)
+        echo "Ensuring Storage Admin role..."
+        gcloud projects add-iam-policy-binding ${{ env.GCP_PROJECT_ID }} \
+          --member="serviceAccount:$SA_EMAIL" \
+          --role="roles/storage.admin"
+
+    - name: Debug - Check and fix Artifact Registry permissions
+      run: |
+        # Check if the credentials are available
+        echo "Using credentials from google-github-actions/auth"
+        
+        # Check if the repository exists
+        gcloud artifacts repositories describe ${{ env.GAR_REPOSITORY }} \
+          --project=${{ env.GCP_PROJECT_ID }} \
+          --location=${{ env.GCP_REGION }} || \
+          (echo "Creating repository..." && \
+           gcloud artifacts repositories create ${{ env.GAR_REPOSITORY }} \
+             --repository-format=docker \
+             --location=${{ env.GCP_REGION }} \
+             --description="Repository for backend images")
+             
+        # Grant permissions - get service account email from gcloud config
+        echo "Ensuring service account has proper permissions..."
+        SA_EMAIL=$(gcloud config get account)
+        echo "Authenticated as: $SA_EMAIL"
+        
+        gcloud artifacts repositories add-iam-policy-binding ${{ env.GAR_REPOSITORY }} \
+          --project=${{ env.GCP_PROJECT_ID }} \
+          --location=${{ env.GCP_REGION }} \
+          --member="serviceAccount:$SA_EMAIL" \
+          --role="roles/artifactregistry.writer"
+
+    - name: Configure Docker for Artifact Registry
+      run: |
+        gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+        
+    # This step creates a Docker credential helper that will properly authenticate with Artifact Registry
+    - name: Set up Docker credentials to Artifact Registry
+      run: |
+        echo "${{ secrets.GCP_SA_KEY }}" > key.json
+        cat key.json | docker login -u _json_key --password-stdin https://${{ env.GCP_REGION }}-docker.pkg.dev
+        rm key.json
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
