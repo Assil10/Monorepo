@@ -100,7 +100,7 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         # Replace with your Workload Identity Provider details from GCP
-        workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/YOUR_POOL_ID/providers/YOUR_PROVIDER_ID'
+        workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
         # Replace with the email of the Service Account GitHub Actions should impersonate
         service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
 
