@@ -89,6 +89,32 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
+// Add database health check endpoint
+app.get("/db-health", async (req, res) => {
+  try {
+    // Test the database connection using the testConnection function
+    await testConnection();
+
+    // Return success if the connection test passed
+    res.status(200).json({
+      status: "OK",
+      database: "Connected",
+      timestamp: new Date(),
+      message: "Database connection is healthy",
+    });
+  } catch (error) {
+    // Return error if the connection test failed
+    console.error("Database health check failed:", error);
+    res.status(500).json({
+      status: "ERROR",
+      database: "Disconnected",
+      timestamp: new Date(),
+      error: error.message,
+      message: "Database connection failed",
+    });
+  }
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error("Global error handler:", err);
