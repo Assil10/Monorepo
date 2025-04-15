@@ -12,8 +12,12 @@ env:
   GCP_PROJECT_ID: 'cellular-way-454315-f2' # Your GCP Project ID
   GCP_REGION: 'us-central1' # The region where your Cloud Run service is
   CLOUD_RUN_SERVICE_NAME: 'korpor' # The name of your Cloud Run service
-  # Use the correct owner (ahmedjaziri31)
-  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/monorepo/backend-service
+  # Define Artifact Registry repo name
+  GAR_REPOSITORY: 'korpor-backend-images'
+  # Define the image name within the repo
+  IMAGE_NAME: 'backend-service'
+  # Construct the full Artifact Registry image path
+  GAR_IMAGE_PATH: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}
 
 # --- Concurrency Control ---
 # Ensure only one run happens at a time for the main branch push trigger
@@ -23,8 +27,8 @@ concurrency:
 
 # --- Jobs ---
 jobs:
-  # --- Job 1: Build, Test, and Push Docker image to GHCR ---
-  build-and-push-ghcr:
+  # --- Job 1: Build, Test, and Push Docker image to Artifact Registry ---
+  build-and-push-gar:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,8 +36,7 @@ jobs:
         working-directory: ./backend
     permissions:
       contents: read
-      packages: write # Required to push to GHCR
-      # Required for Workload Identity Federation
+      # Required for Artifact Registry auth
       id-token: 'write'
 
     steps:
@@ -57,25 +60,25 @@ jobs:
     # - name: Run Tests
     #   run: npm test
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
+    # Authenticate Docker to Google Artifact Registry
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }} # Built-in token
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and push Docker image to GHCR
+    - name: Build and push Docker image to Artifact Registry
       id: build-push
       uses: docker/build-push-action@v5
       with:
         context: . # Build context root (Monorepo/)
-        # Use 'file' instead of 'dockerfile' to specify the path
         file: ./backend/Dockerfile # Path relative to context
         push: true
-        tags: ${{ env.GHCR_IMAGE_NAME }}:${{ github.sha }} # Tag with commit SHA
+        # Use the Artifact Registry image path
+        tags: ${{ env.GAR_IMAGE_PATH }}:${{ github.sha }}
         labels: |
           org.opencontainers.image.source=${{ github.repositoryUrl }}
           org.opencontainers.image.revision=${{ github.sha }}
@@ -85,7 +88,7 @@ jobs:
 
   # --- Job 2: Deploy the image to Google Cloud Run ---
   deploy-to-cloud-run:
-    needs: build-and-push-ghcr # Run after building/pushing
+    needs: build-and-push-gar # Run after building/pushing
     runs-on: ubuntu-latest
     # Permissions needed for GCP auth and deployment
     permissions:
@@ -93,18 +96,7 @@ jobs:
       id-token: 'write' # Required for Workload Identity Federation
 
     steps:
-    # Authenticate to Google Cloud using Workload Identity Federation (Recommended)
-    # Commenting out WIF authentication due to persistent issues
-    # - name: Authenticate to Google Cloud via WIF
-    #   id: auth
-    #   uses: google-github-actions/auth@v2
-    #   with:
-    #     workload_identity_provider: 'projects/${{ env.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
-    #     service_account: 'github-actions-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
-    #     create_credentials_file: false
-
-    # --- Alternative: Authenticate using Service Account Key JSON ---
-    # Uncommenting SA Key authentication
+    # Authenticate using the same method as the build job
     - name: Authenticate to Google Cloud via SA Key
       id: auth
       uses: google-github-actions/auth@v2
@@ -117,12 +109,8 @@ jobs:
       with:
         service: ${{ env.CLOUD_RUN_SERVICE_NAME }}
         region: ${{ env.GCP_REGION }}
-        # Deploy the specific image tagged with the commit SHA
-        image: ${{ env.GHCR_IMAGE_NAME }}:${{ github.sha }}
-        # Optional: Set platform to 'managed' if needed, default is usually fine
-        # platform: 'managed'
-        # Optional: Allow unauthenticated access if required by your service
-        # allow_unauthenticated: true
+        # Deploy the image from Artifact Registry
+        image: ${{ env.GAR_IMAGE_PATH }}:${{ github.sha }}
 
     # Optional: Output the deployed service URL
     - name: Show Deployed URL
