@@ -12,12 +12,10 @@ env:
   GCP_PROJECT_ID: 'cellular-way-454315-f2' # Your GCP Project ID
   GCP_REGION: 'us-central1' # The region where your Cloud Run service is
   CLOUD_RUN_SERVICE_NAME: 'korpor' # The name of your Cloud Run service
-  # Define Artifact Registry repo name
-  GAR_REPOSITORY: 'korpor-backend-images'
-  # Define the image name within the repo
-  IMAGE_NAME: 'backend-service'
-  # Construct the full Artifact Registry image path
-  GAR_IMAGE_PATH: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}
+  GAR_REPOSITORY: 'korpor-backend-images' # Define Artifact Registry repo name
+  IMAGE_NAME: 'backend-service' # Define the image name within the repo
+  # Manually construct the full Artifact Registry image path using defined values
+  GAR_IMAGE_PATH: us-central1-docker.pkg.dev/cellular-way-454315-f2/korpor-backend-images/backend-service
 
 # --- Concurrency Control ---
 # Ensure only one run happens at a time for the main branch push trigger
