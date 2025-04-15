@@ -7,7 +7,7 @@ It also integrates with Cloudinary for image uploads and includes Swagger for AP
 
 **IMPORTANT**: This backend has been migrated from MongoDB to MySQL. For detailed MySQL setup instructions, refer to the [MySQL Migration Guide](./README-MYSQL.md).
 
-## Table of Contents :
+## Table of Contents
 
 1. [Project Structure](#project-structure)
 2. [Prerequisites](#prerequisites)
