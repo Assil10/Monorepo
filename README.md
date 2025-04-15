@@ -194,4 +194,4 @@ docker stats
 - **Container not starting**: Check the logs with `docker compose logs -f <service_name>`
 - **Volume permissions**: Run `chmod -R 777 ./data` to fix permission issues with mounted volumes
 - **Health check failures**: Check service-specific logs to find the cause
-- **Mongo connection issues**: Ensure MongoDB credentials are correctly set in the `.env` file
+- **Mongo connection issues**: Ensure MongoDB credentials are correctly set in the `.env` file#
