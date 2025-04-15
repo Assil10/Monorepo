@@ -15,8 +15,10 @@ import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authSignUpImport } from './routes/(auth)/sign-up'
 // Import Routes
 import { Route as rootRoute } from './routes/__root'
-import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAdminDashboardImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedSuperAdminDashboardImport } from './routes/_authenticated/super-admin/dashboard'
+import { Route as AuthenticatedUserDashboardImport } from './routes/_authenticated/user/dashboard'
 
 // Create Virtual Routes
 
@@ -71,12 +73,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteImport.update({
 const authRouteRoute = authRouteImport.update({
   id: '/(auth)',
   getParentRoute: () => rootRoute,
-} as any)
-
-const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 const errors503LazyRoute = errors503LazyImport
@@ -273,6 +269,28 @@ const authAuthSignIn2LazyRoute = authAuthSignIn2LazyImport
     import('./routes/(auth)/auth/sign-in-2.lazy').then((d) => d.Route)
   )
 
+const AuthenticatedUserDashboardRoute = AuthenticatedUserDashboardImport.update(
+  {
+    id: '/user/dashboard',
+    path: '/user/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any
+)
+
+const AuthenticatedSuperAdminDashboardRoute =
+  AuthenticatedSuperAdminDashboardImport.update({
+    id: '/super-admin/dashboard',
+    path: '/super-admin/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+
+const AuthenticatedAdminDashboardRoute =
+  AuthenticatedAdminDashboardImport.update({
+    id: '/admin/dashboard',
+    path: '/admin/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+
 const authAuthSignInRoute = authAuthSignInImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
@@ -380,13 +398,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof errors503LazyImport
       parentRoute: typeof rootRoute
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexImport
-      parentRoute: typeof AuthenticatedRouteImport
-    }
     '/(auth)/auth/500': {
       id: '/(auth)/auth/500'
       path: '/auth/500'
@@ -400,6 +411,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/sign-in'
       preLoaderRoute: typeof authAuthSignInImport
       parentRoute: typeof authRouteImport
+    }
+    '/_authenticated/admin/dashboard': {
+      id: '/_authenticated/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AuthenticatedAdminDashboardImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/super-admin/dashboard': {
+      id: '/_authenticated/super-admin/dashboard'
+      path: '/super-admin/dashboard'
+      fullPath: '/super-admin/dashboard'
+      preLoaderRoute: typeof AuthenticatedSuperAdminDashboardImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/user/dashboard': {
+      id: '/_authenticated/user/dashboard'
+      path: '/user/dashboard'
+      fullPath: '/user/dashboard'
+      preLoaderRoute: typeof AuthenticatedUserDashboardImport
+      parentRoute: typeof AuthenticatedRouteImport
     }
     '/(auth)/auth/sign-in-2': {
       id: '/(auth)/auth/sign-in-2'
@@ -546,7 +578,9 @@ const AuthenticatedSettingsRouteLazyRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
+  AuthenticatedSuperAdminDashboardRoute: typeof AuthenticatedSuperAdminDashboardRoute
+  AuthenticatedUserDashboardRoute: typeof AuthenticatedUserDashboardRoute
   AuthenticatedAppsIndexLazyRoute: typeof AuthenticatedAppsIndexLazyRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
   AuthenticatedHelpCenterIndexLazyRoute: typeof AuthenticatedHelpCenterIndexLazyRoute
@@ -557,7 +591,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteLazyRoute:
     AuthenticatedSettingsRouteLazyRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
+  AuthenticatedSuperAdminDashboardRoute: AuthenticatedSuperAdminDashboardRoute,
+  AuthenticatedUserDashboardRoute: AuthenticatedUserDashboardRoute,
   AuthenticatedAppsIndexLazyRoute: AuthenticatedAppsIndexLazyRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
   AuthenticatedHelpCenterIndexLazyRoute: AuthenticatedHelpCenterIndexLazyRoute,
@@ -569,7 +605,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof authRouteRouteWithChildren
   '': typeof AuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -584,6 +620,9 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503LazyRoute
   '/auth/500': typeof authAuth500Route
   '/auth/sign-in': typeof authAuthSignInRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
+  '/user/dashboard': typeof AuthenticatedUserDashboardRoute
   '/auth/sign-in-2': typeof authAuthSignIn2LazyRoute
   '/auth/sign-up': typeof authAuthSignUpLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
@@ -599,7 +638,8 @@ export interface FileRoutesByFullPath {
 }
 
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof authRouteRouteWithChildren
+  '': typeof AuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/reset-password': typeof authResetPasswordRoute
@@ -612,6 +652,9 @@ export interface FileRoutesByTo {
   '/503': typeof errors503LazyRoute
   '/auth/500': typeof authAuth500Route
   '/auth/sign-in': typeof authAuthSignInRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
+  '/user/dashboard': typeof AuthenticatedUserDashboardRoute
   '/auth/sign-in-2': typeof authAuthSignIn2LazyRoute
   '/auth/sign-up': typeof authAuthSignUpLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
@@ -641,9 +684,11 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404LazyRoute
   '/(errors)/500': typeof errors500LazyRoute
   '/(errors)/503': typeof errors503LazyRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/(auth)/auth/500': typeof authAuth500Route
   '/(auth)/auth/sign-in': typeof authAuthSignInRoute
+  '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/_authenticated/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
+  '/_authenticated/user/dashboard': typeof AuthenticatedUserDashboardRoute
   '/(auth)/auth/sign-in-2': typeof authAuthSignIn2LazyRoute
   '/(auth)/auth/sign-up': typeof authAuthSignUpLazyRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
@@ -676,6 +721,9 @@ export interface FileRouteTypes {
     | '/503'
     | '/auth/500'
     | '/auth/sign-in'
+    | '/admin/dashboard'
+    | '/super-admin/dashboard'
+    | '/user/dashboard'
     | '/auth/sign-in-2'
     | '/auth/sign-up'
     | '/settings/account'
@@ -691,6 +739,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | ''
     | '/forgot-password'
     | '/otp'
     | '/reset-password'
@@ -703,6 +752,9 @@ export interface FileRouteTypes {
     | '/503'
     | '/auth/500'
     | '/auth/sign-in'
+    | '/admin/dashboard'
+    | '/super-admin/dashboard'
+    | '/user/dashboard'
     | '/auth/sign-in-2'
     | '/auth/sign-up'
     | '/settings/account'
@@ -730,9 +782,11 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
-    | '/_authenticated/'
     | '/(auth)/auth/500'
     | '/(auth)/auth/sign-in'
+    | '/_authenticated/admin/dashboard'
+    | '/_authenticated/super-admin/dashboard'
+    | '/_authenticated/user/dashboard'
     | '/(auth)/auth/sign-in-2'
     | '/(auth)/auth/sign-up'
     | '/_authenticated/settings/account'
@@ -805,7 +859,9 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/route.tsx",
       "children": [
         "/_authenticated/settings",
-        "/_authenticated/",
+        "/_authenticated/admin/dashboard",
+        "/_authenticated/super-admin/dashboard",
+        "/_authenticated/user/dashboard",
         "/_authenticated/apps/",
         "/_authenticated/chats/",
         "/_authenticated/help-center/",
@@ -859,10 +915,6 @@ export const routeTree = rootRoute
     "/(errors)/503": {
       "filePath": "(errors)/503.lazy.tsx"
     },
-    "/_authenticated/": {
-      "filePath": "_authenticated/index.tsx",
-      "parent": "/_authenticated"
-    },
     "/(auth)/auth/500": {
       "filePath": "(auth)/auth/500.tsx",
       "parent": "/(auth)"
@@ -870,6 +922,18 @@ export const routeTree = rootRoute
     "/(auth)/auth/sign-in": {
       "filePath": "(auth)/auth/sign-in.tsx",
       "parent": "/(auth)"
+    },
+    "/_authenticated/admin/dashboard": {
+      "filePath": "_authenticated/admin/dashboard.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/super-admin/dashboard": {
+      "filePath": "_authenticated/super-admin/dashboard.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/user/dashboard": {
+      "filePath": "_authenticated/user/dashboard.tsx",
+      "parent": "/_authenticated"
     },
     "/(auth)/auth/sign-in-2": {
       "filePath": "(auth)/auth/sign-in-2.lazy.tsx",

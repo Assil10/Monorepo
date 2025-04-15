@@ -1,0 +1,43 @@
+name: Backend Service CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build project
+        run: npm run build
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.GHCR_IMAGE_NAME }} .
+
+      - name: Push Docker image
+        run: docker push ${{ env.GHCR_IMAGE_NAME }}
+
+env:
+  GHCR_IMAGE_NAME: ghcr.io/ahmedjaziri31/Monorepo/backend-service
