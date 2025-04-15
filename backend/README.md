@@ -1,4 +1,4 @@
-# Korpor Node.js Backend - Crafted with Love by Assil Khaldi ☕ and changed by ahmed
+# Korpor Node.js Backend - Crafted with Love by Assil Khaldi ☕ and changed by ahmed .
 
 This repository contains a Node.js Express backend that provides authentication, user management, and role-based access control.
 It also integrates with Cloudinary for image uploads and includes Swagger for API documentation.
