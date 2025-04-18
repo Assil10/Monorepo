@@ -1,11 +1,17 @@
-Query: co ownership
+Query: co ownership in tunsiia
 
 Retrieved Documents:
 Document 1:
-Content: QUESTION: Rights And Obligations Of Co-Owners In Joint Ownership Under Tunisian Law
+Content: QUESTION: Co-Ownership In Tunisian Law
 ANSWER: intrdocution:
-- Every co-owner has the right to use the shared property in proportion to their share. They can utilize the property as they see fit, provided they do not infringe upon the rights of other co-owners.
-Metadata: {'answer': 'intrdocution:\n- Every co-owner has the right to use the shared property in proportion to their share. They can utilize the property as they see fit, provided they do not infringe upon the rights of other co-owners.', 'question': 'Rights And Obligations Of Co-Owners In Joint Ownership Under Tunisian Law', 'section': 'Laws'}
+- Co-ownership is a legal system that enables a group of individuals to possess a joint right in a specific property, such as real estate or land. Each partner in co-ownership possesses an undivided share, meaning each owns a percentage of the property without specific delineation of portions. Each partner enjoys equal rights to use and manage the jointly owned property.
+
+What Is Co-Ownership In Tunisian Law?:
+- Co-ownership is a legal system that enables a group of individuals to possess a joint right in a specific property, such as real estate or land. Each partner in co-ownership possesses an undivided share, meaning each owns a percentage of the property without specific delineation of portions. Each partner enjoys equal rights to use and manage the jointly owned property.
+
+Conclusion:
+- Co-ownership in Tunisian law is a crucial system that regulates the sharing of jointly owned properties among individuals. Whether optional or compulsory, it requires a precise understanding of associated laws and obligations to ensure the rights of all parties are upheld and the property is managed effectively. A thorough understanding of co-ownership and its management contributes to avoiding disputes and achieving balance among partners in utilizing and exploiting jointly owned property.
+Metadata: {'answer': 'intrdocution:\n- Co-ownership is a legal system that enables a group of individuals to possess a joint right in a specific property, such as real estate or land. Each partner in co-ownership possesses an undivided share, meaning each owns a percentage of the property without specific delineation of portions. Each partner enjoys equal rights to use and manage the jointly owned property.\n\nWhat Is Co-Ownership In Tunisian Law?:\n- Co-ownership is a legal system that enables a group of individuals to possess a joint right in a specific property, such as real estate or land. Each partner in co-ownership possesses an undivided share, meaning each owns a percentage of the property without specific delineation of portions. Each partner enjoys equal rights to use and manage the jointly owned property.\n\nConclusion:\n- Co-ownership in Tunisian law is a crucial system that regulates the sharing of jointly owned properties among individuals. Whether optional or compulsory, it requires a precise understanding of associated laws and obligations to ensure the rights of all parties are upheld and the property is managed effectively. A thorough understanding of co-ownership and its management contributes to avoiding disputes and achieving balance among partners in utilizing and exploiting jointly owned property.', 'question': 'Co-Ownership In Tunisian Law', 'section': 'Laws'}
 ==================================================
 Document 2:
 Content: QUESTION: Co-Ownership In Tunisian Law: Common Issues And Management Strategies
