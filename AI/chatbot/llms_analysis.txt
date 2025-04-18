@@ -1,0 +1,91 @@
+[LLM Performance Analysis Report]
+
+1. Arabic Repository Analysis:
+- Top Performer: Gemini-1.5-Pro
+  • Perfect diacritic preservation in legal terms
+  • Maintained document structure in responses
+  • 100% language consistency across all queries
+
+2. French Repository Findings:
+- Best Model: Gemini-1.5-Flash
+  • Flawless grammatical gender agreement
+  • Appropriate legal register maintenance
+  • Seamless document-to-response transition
+
+3. English Repository Results:
+- Dominant Model: Gemini-1.5-Pro
+  • Precise terminology replication
+  • Optimal information density
+  • Native-level readability
+
+[Final Recommendations]
+1. Primary Choice: Gemini-1.5-Pro
+   - Strengths: Multilingual consistency, term preservation
+2. Secondary Option: Gemini-1.5-Flash 
+   - Advantages: Faster processing, 95% accuracy
+3. Tertiary Selection: Gemini-1.5-Pro-001
+   - Benefits: Better for formal documentation
+
+[Elimination Notes]
+- Models below v1.5 excluded for >15% info loss
+- Non-multilingual variants removed for language drift
+- Legacy models disqualified for formatting errors
+_______________________________________________________________
+What I asked DeepSeel-Reasoner(R1)
+Here is your task  :
+
+you have 3 repositories :  eng, frensh,arabic .
+
+In each repositry we have text files that contain answers from a code that I wrote .
+
+The code used different LLm to generate an answer for 3 queries using Rag .
+
+That means for each query we have an answer from a different LLM
+
+The name of the LLM is in the begining of the file name before _response  , for exemple for the file name = "gemini-1.5-flash-001_response_query0_ar " the model name is gemini-1.5-flash-001 .
+
+For each query we have a text file that contain the document retrieved ( the document retrieved is the document that the llm uses to generate an answer )
+
+file names structure : retrieved_documents_query0 , retrieved_documents_query1 , retrieved_documents_query2
+
+let's take the mode: gemini-1.5-flash for exemple
+
+The responses related in arabic repository  :
+
+1-gemini-1.5-flash_response_query0_ar
+
+2-gemini-1.5-flash_response_query1_ar
+
+3-gemini-1.5-flash_response_query2_ar
+
+The document retrieved :
+
+1-ar_retrieved_documents_query0
+
+2-ar_retrieved_documents_query1
+
+3-ar_retrieved_documents_query2
+
+Task to do :
+
+1-Compare each model respons to the document retrieved, did it sucessfuly take the informations and generated a humain readable response without removing , adding extra informations , if it didn't elimnate it .
+
+And important to compare the language of the document and the llm response , if the llm response language is different than the documenet elimnate it
+
+2- Compare the llms responses to each other and give me the best LLM.
+
+for exemple for query 0 :
+
+u read retrieved_documents_query0 and see if  gemini-1.5-flash succesfuly generated an answer in the gemini-1.5-flash_response_query0 file
+
+do that again for all llms
+
+and than compare their result to each other
+
+do that for all queries ( qiuery 0 , query 1 , query 2 )
+
+3-In the end generate a file named llms_analysis where you give me top 3 llms that gave the best answer , and tell me why you choose them over the others
+
+Important : each repository is seperated from the other , so for exemple you start with the arabic repository , after you finish you open the frensh repository , and than the eng repository .
+
+Respond with details analysis no code , and save them to file anmed llms_analysis.text
