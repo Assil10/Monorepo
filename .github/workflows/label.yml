@@ -2,7 +2,7 @@ name: Auto Labeler
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, labeled]
   push:
     branches:
       - main
@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Label based on changed files
+        if: github.event.action != 'labeled'
         uses: actions/labeler@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,7 +32,7 @@ jobs:
           configuration-path: .github/labeler.yml
       
       - name: Extract PB code from branch or commit
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target' && github.event.action != 'labeled'
         id: extract-pb
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
@@ -46,7 +47,7 @@ jobs:
           fi
       
       - name: Add PB ticket label if detected
-        if: steps.extract-pb.outputs.pb_code != ''
+        if: steps.extract-pb.outputs.pb_code != '' && github.event.action != 'labeled'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -59,3 +60,98 @@ jobs:
               repo: context.repo.repo,
               labels: [pbCode]
             });
+            
+      - name: Add related labels
+        if: github.event.action == 'labeled'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const addedLabel = context.payload.label.name;
+            const relatedLabels = [];
+            
+            // Define label relationships
+            const labelRelationships = {
+              // Ticket to category mappings
+              'PB001': ['authentication', 'backend'],
+              'PB002': ['authentication', 'backend'],
+              'PB003': ['authentication', 'backend'],
+              'PB004': ['authentication', 'backend', 'super-admin'],
+              'PB005': ['super-admin', 'backend'],
+              'PB006': ['super-admin', 'backend'],
+              'PB007': ['super-admin', 'backend'],
+              'PB009': ['super-admin', 'ai-ml', 'backend'],
+              'PB010': ['admin-backoffice', 'backend', 'front-backoffice'],
+              'PB011': ['admin-backoffice', 'backend', 'front-backoffice'],
+              'PB012': ['admin-backoffice', 'backend', 'front-backoffice'],
+              'PB013': ['admin-backoffice', 'backend', 'front-backoffice'],
+              'PB014': ['admin-backoffice', 'backend', 'front-backoffice'],
+              'PB015': ['admin-backoffice', 'ai-ml'],
+              'PB016': ['real-estate-agent', 'backend', 'front-backoffice'],
+              'PB017': ['real-estate-agent', 'backend', 'front-backoffice'],
+              'PB018': ['real-estate-agent', 'ai-ml'],
+              'PB019': ['real-estate-agent', 'backend', 'front-backoffice'],
+              'PB020': ['real-estate-agent', 'backend', 'front-backoffice'],
+              'PB021': ['investor-mobile', 'front-mobile'],
+              'PB022': ['investor-mobile', 'front-mobile'],
+              'PB023': ['investor-mobile', 'front-mobile'],
+              'PB024': ['investor-mobile', 'front-mobile'],
+              'PB025': ['investor-mobile', 'front-mobile'],
+              'PB026': ['investor-mobile', 'front-mobile', 'ai-ml'],
+              'PB027': ['investor-mobile', 'front-mobile', 'ai-ml'],
+              'PB028': ['investor-mobile', 'front-mobile', 'ai-ml'],
+              'PB029': ['investor-mobile', 'front-mobile'],
+              'PB030': ['ai-ml'],
+              'PB031': ['ai-ml'],
+              'PB032': ['ai-ml'],
+              'PB033': ['ai-ml'],
+              'PB034': ['ai-ml', 'system-security'],
+              'PB035': ['blockchain-contracts'],
+              'PB036': ['blockchain-contracts'],
+              'PB037': ['blockchain-contracts'],
+              'PB038': ['blockchain-contracts'],
+              'PB039': ['blockchain-contracts'],
+              'PB040': ['system-security', 'backend'],
+              'PB041': ['system-security', 'backend'],
+              'PB042': ['system-security', 'backend'],
+              'PB043': ['system-security', 'backend', 'ai-ml'],
+              'PB044': ['devops-infrastructure'],
+              'PB045': ['devops-infrastructure'],
+              'PB046': ['devops-infrastructure'],
+              'PB047': ['devops-infrastructure'],
+              'PB048': ['devops-infrastructure'],
+              'PB049': ['devops-infrastructure'],
+              'PB050': ['devops-infrastructure'],
+              'PB051': ['devops-infrastructure'],
+              'PB052': ['devops-infrastructure'],
+              'PB053': ['mobile-ux', 'front-mobile'],
+              'PB054': ['mobile-ux', 'front-mobile'],
+              'PB055': ['mobile-ux', 'front-mobile'],
+              
+              // Category to related categories
+              'authentication': ['backend'],
+              'super-admin': ['backend', 'front-backoffice'],
+              'admin-backoffice': ['backend', 'front-backoffice'],
+              'real-estate-agent': ['backend', 'front-backoffice'],
+              'investor-mobile': ['front-mobile'],
+              'mobile-ux': ['front-mobile'],
+              'system-security': ['backend']
+            };
+            
+            // Check if the added label has related labels defined
+            if (labelRelationships[addedLabel]) {
+              relatedLabels.push(...labelRelationships[addedLabel]);
+            }
+            
+            // Only proceed if we have related labels to add
+            if (relatedLabels.length > 0) {
+              console.log(`Adding related labels for ${addedLabel}: ${relatedLabels.join(', ')}`);
+              
+              // Add the related labels
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: relatedLabels
+              });
+            }
