@@ -2,42 +2,156 @@
 # When a file that matches one of the patterns is modified,
 # the corresponding label will be automatically added to the PR.
 
+# Main Categories based on project structure
+backend:
+  - "backend/**"
+  - "api/**"
+  - "database/**"
+  - "services/**"
+
+front-backoffice:
+  - "front-backoffice/**"
+  - "admin/**"
+  - "backoffice/**"
+
+front-mobile:
+  - "front-mobile/**"
+  - "mobile/**"
+  - "app/**"
+
+ai:
+  - "AI/**"
+  - "ml/**"
+  - "models/**"
+  - "**/*.ipynb"
+  - "AI/chatbot/**"
+  - "AI/recommendation system/**"
+  - "AI/prediction model/**"
+
 blockchain:
   - "blockchain/**"
   - "smart-contracts/**"
-  - "**/*.sol"         # Solidity smart contracts
+  - "**/*.sol"
 
-backend:
-  - "backend/**"
-  - "server/**"
-  - "api/**"
-  - "database/**"
-  - "services/**"      # any additional backend services folder
+# Backlog Categories (PB ID based)
+authentication:
+  - "backend/src/auth/**"
+  - "backend/src/users/**"
+  - "backend/src/middleware/auth*.js"
+  - "backend/src/routes/auth*.js"
+  - "backend/src/controllers/auth*.js"
+  - "backend/src/models/user*.js"
+  - any: ["**/*auth*/**", "**/*login*/**", "**/*register*/**", "**/*user*/**"]
 
-frontend:
-  - "frontend/**"
-  - "client/**"
-  - "ui/**"
-  - "**/*.jsx"
-  - "**/*.tsx"
-  - "**/*.html"
-  - "**/*.css"
-  - "**/*.scss"
+super-admin:
+  - "front-backoffice/src/pages/admin/**"
+  - "front-backoffice/src/components/admin/**"
+  - "backend/src/controllers/admin*.js"
+  - "backend/src/routes/admin*.js"
+  - any: ["**/*admin*/**", "**/*dashboard*/**", "**/*report*/**"]
 
-ai:
-  - "ai/**"
-  - "ml/**"
-  - "models/**"
-  - "notebooks/**"
-  - "**/*.ipynb"       # Jupyter notebooks for AI/ML work
+admin-backoffice:
+  - "front-backoffice/src/pages/backoffice/**"
+  - "front-backoffice/src/components/backoffice/**"
+  - "backend/src/controllers/listing*.js"
+  - "backend/src/controllers/agent*.js"
+  - "backend/src/controllers/transaction*.js"
+  - any: ["**/*listing*/**", "**/*transaction*/**", "**/*agent*/**"]
 
+real-estate-agent:
+  - "front-backoffice/src/pages/agent/**"
+  - "front-backoffice/src/components/agent/**"
+  - "backend/src/controllers/listing*.js"
+  - "backend/src/models/listing*.js"
+  - any: ["**/*listing*/**", "**/*manage*/**", "**/*crm*/**"]
+
+investor-mobile:
+  - "front-mobile/**"
+  - "front-mobile/src/pages/listing/**"
+  - "front-mobile/src/components/listing/**"
+  - "front-mobile/src/pages/portfolio/**"
+  - "front-mobile/src/pages/payment/**"
+  - any: ["**/*mobile*/**", "**/*investor*/**", "**/*portfolio*/**"]
+
+ai-ml:
+  - "AI/**"
+  - "AI/chatbot/**"
+  - "AI/recommendation system/**"
+  - "AI/prediction model/**"
+  - "AI/scraping bots/**"
+  - any: ["**/*recommender*/**", "**/*prediction*/**", "**/*nlp*/**", "**/*ml*/**"]
+
+blockchain-contracts:
+  - "blockchain/**"
+  - "smart-contracts/**"
+  - "**/*.sol"
+  - any: ["**/*contract*/**", "**/*blockchain*/**", "**/*transaction*/**"]
+
+system-security:
+  - "backend/src/middleware/auth*.js"
+  - "backend/src/config/security*.js"
+  - "backend/src/utils/security*.js"
+  - any: ["**/*security*/**", "**/*authentication*/**", "**/*session*/**"]
+
+devops-infrastructure:
+  - ".github/workflows/**"
+  - "docker-compose*.yml"
+  - "**/Dockerfile"
+  - "**/docker-compose*.yml"
+  - ".dockerignore"
+  - "nginx/**"
+  - "kubernetes/**"
+  - "terraform/**"
+  - any: ["**/*ci*/**", "**/*cd*/**", "**/*deploy*/**", "**/*infra*/**"]
+
+mobile-ux:
+  - "front-mobile/src/components/ui/**"
+  - "front-mobile/src/styles/**"
+  - "front-mobile/src/theme/**"
+  - any: ["**/*mobile*/**", "**/*ui*/**", "**/*ux*/**", "**/*style*/**"]
+
+# Documentation and utilities
 docs:
   - "**/*.md"
   - "**/*.rst"
+  - "**/*.txt"
+  - "docs/**"
 
 tests:
-  - "tests/**"
   - "**/*.spec.js"
   - "**/*.test.js"
   - "**/*.spec.ts"
   - "**/*.test.ts"
+  - "tests/**"
+  - "**/__tests__/**"
+
+# Backlog ticket labels - match commit messages or branch names
+pb001-create-account:
+  - any: ["*PB001*", "*create-account*", "*secure-auth*"]
+
+pb009-secure-ai-assistant:
+  - any: ["*PB009*", "*secure-ai*", "*ai-assistant*"]
+
+pb015-ai-valuation:
+  - any: ["*PB015*", "*ai-valuation*", "*valuation*"]
+
+pb026-ai-recommendations:
+  - any: ["*PB026*", "*ai-recommendation*", "*property-recommendation*"]
+
+pb027-ai-legal-qa:
+  - any: ["*PB027*", "*ai-legal*", "*legal-qa*"]
+
+pb028-earnings-prediction:
+  - any: ["*PB028*", "*earnings-prediction*", "*prediction*"]
+
+pb030-to-pb034-ai:
+  - any: ["*PB03[0-4]*", "*recommender*", "*valuation*", "*forecasting*", "*nlp*"]
+
+pb035-to-pb039-blockchain:
+  - any: ["*PB03[5-9]*", "*virtual-contract*", "*asset-security*", "*transaction-verify*"]
+
+pb044-to-pb052-devops:
+  - any: ["*PB04[4-9]*", "*PB05[0-2]*", "*ci-cd*", "*deploy*", "*docker*", "*monitoring*"]
+
+pb053-to-pb055-mobile:
+  - any: ["*PB05[3-5]*", "*responsive*", "*push-notification*", "*offline*"]

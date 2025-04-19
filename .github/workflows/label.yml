@@ -1,8 +1,16 @@
-name: Labeler
+name: Auto Labeler
 
 on:
   pull_request_target:
     types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - 'release/**'
 
 jobs:
   label:
@@ -12,7 +20,42 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Label changed paths in pull request
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Label based on changed files
         uses: actions/labeler@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
+          configuration-path: .github/labeler.yml
+      
+      - name: Extract PB code from branch or commit
+        if: github.event_name == 'pull_request_target'
+        id: extract-pb
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          COMMIT_MSG=$(git log -1 --pretty=format:%s ${{ github.event.pull_request.head.sha }})
+          
+          # Extract PB code from branch name (e.g., feature/PB001-auth)
+          if [[ $BRANCH_NAME =~ PB([0-9]{3}) ]]; then
+            echo "pb_code=PB${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          # Extract PB code from commit message (e.g., [PB001] Add login page)
+          elif [[ $COMMIT_MSG =~ PB([0-9]{3}) ]]; then
+            echo "pb_code=PB${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Add PB ticket label if detected
+        if: steps.extract-pb.outputs.pb_code != ''
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pbCode = '${{ steps.extract-pb.outputs.pb_code }}';
+            
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [pbCode]
+            });
