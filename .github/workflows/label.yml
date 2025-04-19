@@ -155,3 +155,173 @@ jobs:
                 labels: relatedLabels
               });
             }
+            
+      - name: Assign reviewer and create summary comment
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request_target'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            async function main() {
+              // Get current PR labels
+              const { data: prLabels } = await github.rest.issues.listLabelsOnIssue({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              
+              // Extract label names
+              const labelNames = prLabels.map(label => label.name);
+              
+              // Look for PB ticket labels (format: "PB001", "PB002", etc.)
+              const ticketLabels = labelNames.filter(label => /^PB\d{3}$/.test(label));
+              
+              // Only proceed if there's at least one ticket label
+              if (ticketLabels.length === 0) {
+                console.log("No ticket labels found, skipping assignment and comment");
+                return;
+              }
+              
+              // Label descriptions mapping
+              const labelDescriptions = {
+                // Ticket descriptions
+                'PB001': 'Create account & secure auth',
+                'PB002': 'Profile management',
+                'PB003': 'Secure logout',
+                'PB004': 'Multi-company admin management',
+                'PB005': 'Security / compliance dashboard',
+                'PB006': 'Global configuration panel',
+                'PB007': 'Analytics & reports',
+                'PB009': 'Secure AI assistant access',
+                'PB010': 'Listing management',
+                'PB011': 'Agent permissions',
+                'PB012': 'Transactions & commissions',
+                'PB013': 'Investor support inbox',
+                'PB014': 'Agency analytics dashboard',
+                'PB015': 'AI-powered valuation',
+                'PB016': 'Create/manage listings',
+                'PB017': 'Investments & purchases',
+                'PB018': 'Data for AI',
+                'PB019': 'Client CRM',
+                'PB020': 'View commissions',
+                'PB021': 'Browse listings',
+                'PB022': 'Advanced search / filters',
+                'PB023': 'Simple invest flow',
+                'PB024': 'Real-time portfolio',
+                'PB025': 'Secure payments',
+                'PB026': 'AI property recommendations',
+                'PB027': 'AI legal Q&A',
+                'PB028': 'Earnings prediction',
+                'PB029': 'Manage earnings & withdrawals',
+                'PB030': 'Personalized recommender',
+                'PB031': 'Valuation & rent predictor',
+                'PB032': 'Investment forecasting',
+                'PB033': 'NLP legal info',
+                'PB034': 'Secure AI DB access',
+                'PB035': 'Virtual contracts',
+                'PB036': 'Investor asset security',
+                'PB037': 'Admin transaction verify',
+                'PB038': 'Immutable records',
+                'PB039': 'Chain health monitoring',
+                'PB040': 'Automated auth/session manager',
+                'PB041': 'Real-time notifications',
+                'PB042': 'Transaction consistency',
+                'PB043': 'Secure AI↔DB comms',
+                'PB044': 'CI/CD',
+                'PB045': 'Deploy images to GCP registry',
+                'PB046': 'Auto-deploy back-end & DB',
+                'PB047': 'Dockerize components',
+                'PB048': 'Auto-deploy web frontend',
+                'PB049': 'Auto-deploy mobile app',
+                'PB050': 'Mobile versioning',
+                'PB051': 'System health monitoring',
+                'PB052': 'Env configuration manager',
+                'PB053': 'Responsive intuitive UI',
+                'PB054': 'Push notifications',
+                'PB055': 'Offline portfolio access',
+                
+                // Category descriptions
+                'authentication': 'Authentication & User Management',
+                'super-admin': 'Super-Admin Features',
+                'admin-backoffice': 'Admin Back-office Features',
+                'real-estate-agent': 'Real-Estate Agent Features',
+                'investor-mobile': 'Investor Mobile Features',
+                'ai-ml': 'AI & Machine Learning Features',
+                'blockchain-contracts': 'Blockchain & Smart Contracts',
+                'system-security': 'System & Security Features',
+                'devops-infrastructure': 'DevOps & Infrastructure',
+                'mobile-ux': 'Mobile-Specific UX',
+                'backend': 'Backend Components',
+                'front-backoffice': 'Backoffice Frontend Components',
+                'front-mobile': 'Mobile Frontend Components',
+                'ai': 'AI Components',
+                'blockchain': 'Blockchain Components',
+                'docs': 'Documentation',
+                'tests': 'Testing Components'
+              };
+              
+              // Find component labels (these are the main project areas)
+              const componentLabels = labelNames.filter(label => 
+                ['backend', 'front-backoffice', 'front-mobile', 'ai', 'blockchain'].includes(label)
+              );
+              
+              // Find category labels
+              const categoryLabels = labelNames.filter(label => 
+                ['authentication', 'super-admin', 'admin-backoffice', 'real-estate-agent', 
+                 'investor-mobile', 'ai-ml', 'blockchain-contracts', 'system-security',
+                 'devops-infrastructure', 'mobile-ux'].includes(label)
+              );
+              
+              // Create a structured comment
+              let comment = `## 🔄 PR Auto-Review Assignment\n\n`;
+              
+              // Add ticket information
+              if (ticketLabels.length > 0) {
+                comment += `### 🎫 Ticket Information\n\n`;
+                ticketLabels.forEach(ticket => {
+                  comment += `- **${ticket}**: ${labelDescriptions[ticket] || 'No description available'}\n`;
+                });
+                comment += `\n`;
+              }
+              
+              // Add component information
+              if (componentLabels.length > 0) {
+                comment += `### 🧩 Components\n\n`;
+                componentLabels.forEach(component => {
+                  comment += `- **${component}**: ${labelDescriptions[component] || 'No description available'}\n`;
+                });
+                comment += `\n`;
+              }
+              
+              // Add category information
+              if (categoryLabels.length > 0) {
+                comment += `### 📋 Categories\n\n`;
+                categoryLabels.forEach(category => {
+                  comment += `- **${category}**: ${labelDescriptions[category] || 'No description available'}\n`;
+                });
+                comment += `\n`;
+              }
+              
+              comment += `This PR has been automatically assigned to @ahmedjaziri31 for review based on the detected ticket and categories.`;
+              
+              // Add the comment to the PR
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              
+              // Assign ahmedjaziri31 as reviewer
+              await github.rest.pulls.requestReviewers({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                reviewers: ['ahmedjaziri31']
+              });
+              
+              console.log("Assigned ahmedjaziri31 as reviewer and added summary comment");
+            }
+            
+            // Run the main function
+            main();
