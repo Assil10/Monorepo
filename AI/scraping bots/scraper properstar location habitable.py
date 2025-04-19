@@ -108,6 +108,5 @@ print("end of scraping")
 #creating the dataframe and transform it into a csv file
 df=pd.DataFrame(property_details_lst)
 df.to_csv('properstar_location.csv',index=False)
-driver.quit()
 # Close the driver
 driver.quit()

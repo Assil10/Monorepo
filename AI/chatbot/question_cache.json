@@ -1,0 +1,22 @@
+{
+  "hello": "Hello! How can I assist you today?",
+  "hi": "Hi there! What can I help you with?",
+  "hey": "Hey! How can I help you today?",
+  "greetings": "Greetings! I'm here to assist you. What do you need help with?",
+  "good morning": "Good morning! How can I assist you today?",
+  "good afternoon": "Good afternoon! What can I help you with today?",
+  "good evening": "Good evening! How may I assist you?",
+  "how are you": "I'm doing well, thank you for asking! How can I help you today?",
+  "help": "I'm here to help! What information or assistance do you need?",
+  "bonjour": "Bonjour! Comment puis-je vous aider aujourd'hui?",
+  "salut": "Salut! Que puis-je faire pour vous?",
+  "bonsoir": "Bonsoir! Comment puis-je vous aider ce soir?",
+  "comment ça va": "Je vais bien, merci de demander! Comment puis-je vous aider aujourd'hui?",
+  "aide": "Je suis là pour vous aider! De quelle information ou assistance avez-vous besoin?",
+  "مرحبا": "مرحباً! كيف يمكنني مساعدتك اليوم؟",
+  "السلام عليكم": "وعليكم السلام! كيف يمكنني مساعدتك اليوم؟",
+  "صباح الخير": "صباح النور! كيف يمكنني مساعدتك اليوم؟",
+  "مساء الخير": "مساء النور! كيف يمكنني مساعدتك؟",
+  "كيف حالك": "أنا بخير، شكراً على السؤال! كيف يمكنني مساعدتك اليوم؟",
+  "مساعدة": "أنا هنا للمساعدة! ما المعلومات أو المساعدة التي تحتاجها؟"
+}

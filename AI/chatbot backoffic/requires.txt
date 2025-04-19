@@ -1,0 +1,5 @@
+xampp
+bd : MySQL
+user demand : I need ....
+user query => nchoufha bel bq => query bd => return result => LLM =>  humain response 
+el company naarfha bel admin , company is identfiied by an admin
